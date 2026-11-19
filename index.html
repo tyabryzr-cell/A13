@@ -3,274 +3,277 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ملاحة افزعلي 3D</title>
+  <title>ملاحة 3D تفصيلية</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&display=swap" rel="stylesheet" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <style>
     * { box-sizing: border-box; user-select: none; }
-    body, html, #map {
+    html, body, #map {
       margin: 0; padding: 0; width: 100%; height: 100%;
-      background: #0b192c; font-family: 'Cairo', sans-serif;
+      background: #0b1320; font-family: 'Cairo', sans-serif;
       overflow: hidden;
     }
 
-    /* البطاقة العلوية للتوجيه */
-    .nav-top-wrapper {
-      position: fixed; top: 14px; left: 14px; right: 14px; z-index: 30;
-      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    /* الشريط العلوي: بطاقة التوجيه + السرعة */
+    .top-hud {
+      position: fixed; top: 12px; left: 12px; right: 12px; z-index: 30;
+      display: flex; align-items: flex-start; gap: 10px;
       pointer-events: none;
     }
 
-    .turn-box {
-      flex: 1;
-      display: flex; flex-direction: column; align-items: flex-end;
+    .turn-card {
       pointer-events: auto;
+      background: #1d4ed8;
+      border: 1px solid rgba(191, 219, 254, 0.35);
+      border-radius: 14px;
+      overflow: hidden;
+      min-width: 210px;
+      max-width: 270px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      cursor: pointer;
     }
 
-    .turn-main {
-      background: linear-gradient(135deg, #1d3557 0%, #2a486b 100%);
-      border: 1px solid rgba(147, 197, 253, 0.25);
-      border-radius: 18px;
+    .turn-top {
       padding: 10px 14px;
       display: flex; align-items: center; gap: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
-      width: 100%; max-width: 260px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
     }
 
-    .turn-icon {
-      width: 52px; height: 52px;
-      background: #facc15;
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(250, 204, 21, 0.35);
+    .turn-arrow-main {
+      color: #ffffff;
+      font-size: 26px; font-weight: 800; line-height: 1;
     }
 
-    .turn-text {
-      display: flex; flex-direction: column; text-align: right; flex: 1;
+    .turn-meta {
+      display: flex; flex-direction: column; text-align: right;
     }
     .turn-dist {
-      color: #ffffff; font-size: 21px; font-weight: 800; line-height: 1.2;
+      color: #ffffff; font-size: 20px; font-weight: 800; line-height: 1.15;
     }
     .turn-street {
-      color: #fde047; font-size: 14px; font-weight: 700;
+      color: #dbeafe; font-size: 13px; font-weight: 700;
     }
 
-    .turn-next {
-      margin-top: 6px;
-      background: rgba(23, 42, 69, 0.92);
-      border: 1px solid rgba(147, 197, 253, 0.2);
-      color: #e2e8f0;
-      padding: 5px 12px;
+    .lane-strip {
+      background: #1e40af;
+      border-top: 1px solid rgba(255, 255, 255, 0.16);
+      padding: 5px 14px;
+      display: flex; justify-content: space-around; align-items: center;
+      color: #ffffff; font-size: 16px; font-weight: 800;
+    }
+
+    .speed-box {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.35);
       border-radius: 12px;
-      font-size: 12px; font-weight: 700;
-      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px;
+      display: flex; align-items: center; gap: 10px;
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .speed-limit-sign {
+      background: #ffffff;
+      color: #0f172a;
+      border: 3px solid #ef4444;
+      border-radius: 8px;
+      padding: 2px 7px;
+      text-align: center;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+    .speed-limit-sign .num { font-size: 16px; display: block; }
+    .speed-limit-sign .unit { font-size: 9px; color: #475569; }
+
+    .cur-speed {
+      font-size: 20px; font-weight: 800;
+    }
+
+    /* لوحة الأوضاع والمدن المصغرة أعلى اليمين */
+    .quick-controls {
+      position: fixed; top: 12px; right: 12px; z-index: 35;
+      display: flex; flex-direction: column; gap: 6px;
+      background: rgba(10, 15, 28, 0.88);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 12px;
+      padding: 7px 8px;
+      backdrop-filter: blur(8px);
+    }
+
+    .q-row { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .q-btn {
+      background: #1e293b; color: #f8fafc;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 7px; padding: 4px 8px;
+      font-size: 11px; font-weight: 700;
+      font-family: 'Cairo', sans-serif;
+      cursor: pointer;
+    }
+    .q-btn.active {
+      background: #f59e0b; color: #090d16; border-color: #f59e0b;
+    }
+
+    /* أزرار التحكم الجانبية اليسرى */
+    .left-rail {
+      position: fixed; top: 130px; left: 12px; z-index: 30;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .rail-btn {
+      width: 40px; height: 40px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 10px;
+      color: #f8fafc;
+      font-size: 15px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
     }
 
-    /* مؤشر السرعة وشعار افزعلي (يسار أعلى) */
-    .speed-column {
-      display: flex; flex-direction: column; align-items: center; gap: 6px;
-      pointer-events: auto;
-    }
-
-    .speed-limit {
-      width: 56px; height: 56px;
-      background: #ffffff;
-      border: 5px solid #ef4444;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      color: #0f172a; font-size: 19px; font-weight: 800;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-    }
-
-    .current-speed {
-      color: #ffffff; font-size: 16px; font-weight: 800;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.8);
-      line-height: 1;
-    }
-
-    .brand-pill {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(250, 204, 21, 0.4);
-      padding: 3px 8px;
-      border-radius: 20px;
-      display: flex; align-items: center; gap: 5px;
-      color: #ffffff; font-size: 12px; font-weight: 700;
-    }
-    .brand-dot {
-      width: 16px; height: 16px; border-radius: 50%;
-      background: #facc15; color: #0f172a;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 800;
-    }
-
-    /* أزرار التحكم الجانبية */
-    .side-controls {
-      position: fixed; top: 36%; z-index: 25;
-      display: flex; flex-direction: column; gap: 10px;
-    }
-    .side-controls.right { right: 14px; }
-    .side-controls.left { left: 14px; }
-
-    .ctrl-btn {
-      width: 44px; height: 44px;
-      background: rgba(23, 42, 69, 0.92);
-      border: 1.5px solid rgba(148, 163, 184, 0.3);
-      border-radius: 14px;
-      color: #f8fafc;
-      font-family: 'Cairo', sans-serif;
-      font-size: 15px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-      transition: 0.15s;
-    }
-    .ctrl-btn:active { transform: scale(0.93); }
-    .ctrl-btn.active-gold {
-      border-color: #facc15;
-      color: #facc15;
-      box-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
-    }
-
     /* الشريط السفلي للرحلة */
-    .bottom-bar {
-      position: fixed; bottom: 16px; left: 14px; right: 14px; z-index: 30;
-      background: linear-gradient(180deg, rgba(26, 46, 74, 0.96) 0%, rgba(15, 29, 48, 0.98) 100%);
-      border: 1px solid rgba(147, 197, 253, 0.25);
-      border-radius: 20px;
-      padding: 12px 16px;
-      display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+    .bottom-hud {
+      position: fixed; bottom: 14px; left: 12px; right: 12px; z-index: 30;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      pointer-events: none;
     }
 
-    .btn-close-trip {
-      width: 44px; height: 44px;
-      background: rgba(239, 68, 68, 0.22);
-      border: 1px solid rgba(239, 68, 68, 0.45);
+    .eta-card {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid rgba(148, 163, 184, 0.28);
       border-radius: 14px;
-      color: #fca5a5;
-      font-size: 18px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
+      padding: 8px 14px;
+      display: flex; align-items: center; gap: 12px;
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     }
 
-    .trip-info {
-      text-align: center;
-    }
-    .trip-time {
-      color: #fde047; font-size: 20px; font-weight: 800; line-height: 1.2;
-    }
-    .trip-meta {
-      color: #cbd5e1; font-size: 12px; font-weight: 600;
-    }
+    .eta-time { font-size: 18px; font-weight: 800; line-height: 1.2; }
+    .eta-sub { font-size: 12px; color: #cbd5e1; font-weight: 600; }
 
-    .btn-expand {
-      width: 42px; height: 42px;
-      background: rgba(51, 80, 117, 0.65);
-      border: 1px solid rgba(147, 197, 253, 0.25);
-      border-radius: 50%;
+    .eta-expand {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.25);
       color: #ffffff;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
+      font-weight: 800;
     }
 
-    /* أيقونة السيارة / السهم على الخريطة */
-    .nav-puck {
-      width: 44px; height: 44px;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, rgba(56, 189, 248, 0) 70%);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .nav-arrow {
-      width: 0; height: 0;
-      border-left: 11px solid transparent;
-      border-right: 11px solid transparent;
-      border-bottom: 22px solid #ffffff;
-      filter: drop-shadow(0 0 6px #38bdf8);
+    .weather-pill {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 12px;
+      padding: 8px 12px;
+      color: #f8fafc;
+      font-size: 13px; font-weight: 700;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
     }
 
-    .city-tag {
-      background: rgba(15, 29, 48, 0.85);
-      color: #e2e8f0;
-      border: 1px solid rgba(125, 211, 252, 0.35);
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      white-space: nowrap;
+    /* مجسمات الأشجار والسيارات على الخريطة */
+    .tree-3d {
+      width: 18px; height: 18px;
+      border-radius: 50% 50% 45% 45%;
+      background: radial-gradient(circle at 35% 30%, #4ade80, #166534 75%);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.55), inset -2px -2px 4px rgba(0,0,0,0.4);
+      border: 1px solid rgba(187, 247, 208, 0.25);
+      pointer-events: none;
+    }
+
+    .car-3d {
+      width: 14px; height: 24px;
+      background: linear-gradient(180deg, #f8fafc 0%, #cbd5e1 100%);
+      border-radius: 5px;
+      border: 1px solid #0f172a;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.65);
+      position: relative;
+      pointer-events: none;
+    }
+    .car-3d::before {
+      content: "";
+      position: absolute; top: 5px; left: 2px; right: 2px; height: 5px;
+      background: #1e293b; border-radius: 2px;
+    }
+
+    .user-car {
+      width: 20px; height: 32px;
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      border: 2px solid #ffffff;
+      border-radius: 7px;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.9);
       pointer-events: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- الشريط العلوي -->
-  <div class="nav-top-wrapper">
-    <div class="turn-box">
-      <div class="turn-main" onclick="toggleSimulation()">
-        <div class="turn-icon">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18v-6a3 3 0 0 1 3-3h7"/>
-            <polyline points="15 5 19 9 15 13"/>
-          </svg>
-        </div>
-        <div class="turn-text">
-          <div class="turn-dist" id="distText">بعد 1.5 كم</div>
-          <div class="turn-street" id="streetText">شارع دجلة</div>
-        </div>
-      </div>
-      <div class="turn-next">
-        <span>↳ بعدها: طريق محمد القاسم</span>
-      </div>
+  <!-- لوحة الأوضاع والمدن والزاوية -->
+  <div class="quick-controls" style="top: auto; bottom: 72px; right: 12px;">
+    <div class="q-row">
+      <button id="mAuto" class="q-btn active" onclick="setThemeMode('auto')">تلقائي</button>
+      <button id="mDay" class="q-btn" onclick="setThemeMode('day')">نهاري</button>
+      <button id="mNight" class="q-btn" onclick="setThemeMode('night')">ليلي</button>
     </div>
-
-    <div class="speed-column">
-      <div class="speed-limit">60</div>
-      <div class="current-speed" id="speedVal">49</div>
-      <div class="brand-pill">
-        <span>افزعلي</span>
-        <span class="brand-dot">A</span>
-      </div>
+    <div class="q-row">
+      <button class="q-btn" onclick="goCity('baghdad')">بغداد</button>
+      <button class="q-btn" onclick="goCity('samawah')">السماوة</button>
+      <button id="btn3dToggle" class="q-btn active" onclick="togglePitch()">3D</button>
     </div>
   </div>
 
-  <!-- أزرار اليمين -->
-  <div class="side-controls right">
-    <button id="btn3D" class="ctrl-btn active-gold" onclick="toggle3D()">3D</button>
-    <button class="ctrl-btn" onclick="recenterCamera()" title="إعادة التمركز">A</button>
-    <button class="ctrl-btn" onclick="resetNorth()" title="الشمال">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5">
-        <polygon points="12 3 18 19 12 15 6 19 12 3"/>
-      </svg>
-    </button>
+  <!-- بطاقة التوجيه والسرعة -->
+  <div class="top-hud">
+    <div class="turn-card" onclick="toggleSim()">
+      <div class="turn-top">
+        <div class="turn-arrow-main">↑</div>
+        <div class="turn-meta">
+          <div class="turn-dist" id="hudDist">1.5 كم</div>
+          <div class="turn-street" id="hudStreet">شارع دجلة</div>
+        </div>
+      </div>
+      <div class="lane-strip">
+        <span>↑</span>
+        <span>↑</span>
+        <span style="color:#fde047;">↱</span>
+      </div>
+    </div>
+
+    <div class="speed-box">
+      <div class="speed-limit-sign">
+        <span class="num">50</span>
+        <span class="unit">km/h</span>
+      </div>
+      <div class="cur-speed" id="hudSpeed">49</div>
+    </div>
   </div>
 
-  <!-- أزرار اليسار -->
-  <div class="side-controls left">
-    <button class="ctrl-btn" onclick="toggleSimulation()" title="تشغيل/إيقاف المحاكاة">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="#f87171" stroke="#f87171" stroke-width="2">
-        <polygon points="12 2 16 12 12 22 8 12 12 2"/>
-      </svg>
-    </button>
-    <button class="ctrl-btn" onclick="map.zoomIn()">+</button>
-    <button class="ctrl-btn" onclick="map.zoomOut()">−</button>
-    <button id="btnMute" class="ctrl-btn" onclick="toggleMute()">🔊</button>
+  <!-- أزرار التحكم الجانبية -->
+  <div class="left-rail">
+    <button class="rail-btn" onclick="recenterNorth()" title="الشمال">➤</button>
+    <button class="rail-btn" onclick="toggleSim()" title="تشغيل/إيقاف الحركة">💬</button>
+    <button class="rail-btn" id="soundBtn" onclick="toggleSound()" title="الصوت">🔊</button>
+    <button class="rail-btn" onclick="map.zoomIn()" title="تكبير">+</button>
+    <button class="rail-btn" onclick="map.zoomOut()" title="تصغير">−</button>
   </div>
 
   <!-- الشريط السفلي -->
-  <div class="bottom-bar">
-    <button class="btn-close-trip" onclick="resetTrip()">✕</button>
-    <div class="trip-info">
-      <div class="trip-time" id="etaMinutes">6 دقايق</div>
-      <div class="trip-meta" id="etaDetails">1.5 كم • توصل 10:38</div>
+  <div class="bottom-hud">
+    <div class="eta-card">
+      <div>
+        <div class="eta-time" id="etaClock">10:38 م</div>
+        <div class="eta-sub" id="etaSummary">6 دقايق • 1.5 كم</div>
+      </div>
+      <button class="eta-expand" onclick="switchRouteDemo()" title="تبديل المسار">⌃</button>
     </div>
-    <button class="btn-expand" onclick="switchCity()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <polyline points="18 15 12 9 6 15"/>
-      </svg>
-    </button>
+
+    <div class="weather-pill" id="weatherBox">🌙 19°</div>
   </div>
 
   <div id="map"></div>
@@ -281,89 +284,152 @@
       true
     );
 
-    let is3D = true;
-    let isMuted = false;
-    let isSimulating = true;
-    let currentCity = 'baghdad';
+    let themeMode = 'auto';
+    let pitch3D = true;
+    let simulating = true;
+    let muted = false;
+    let progress = 0;
 
-    // مسار الملاحة في بغداد (الكرادة -> ساحة التحرير)
-    const baghdadRoute = [
-      [44.4165, 33.3080],
-      [44.4142, 33.3115],
-      [44.4118, 33.3152],
-      [44.4095, 33.3188],
-      [44.4076, 33.3224],
-      [44.4054, 33.3267]
-    ];
+    const routes = {
+      baghdad: {
+        street: "شارع دجلة",
+        temp: "19°",
+        coords: [
+          [44.4054, 33.3267],
+          [44.4076, 33.3224],
+          [44.4095, 33.3188],
+          [44.4118, 33.3152],
+          [44.4142, 33.3115],
+          [44.4165, 33.3080]
+        ]
+      },
+      samawah: {
+        street: "كورنيش السماوة",
+        temp: "22°",
+        coords: [
+          [45.2845, 31.3265],
+          [45.2872, 31.3281],
+          [45.2901, 31.3298],
+          [45.2925, 31.3310],
+          [45.2944, 31.3320]
+        ]
+      }
+    };
 
-    // مسار الملاحة في السماوة (الكورنيش -> مركز المدينة)
-    const samawahRoute = [
-      [45.2845, 31.3265],
-      [45.2872, 31.3281],
-      [45.2901, 31.3298],
-      [45.2925, 31.3310],
-      [45.2944, 31.3320]
-    ];
+    let currentKey = 'baghdad';
+    let activeCoords = routes.baghdad.coords;
 
-    let activeRoute = baghdadRoute;
-    let simProgress = 0;
-
-    const landmarks = [
-      { name: "ساحة التحرير", lng: 44.4054, lat: 33.3267 },
-      { name: "الجادرية", lng: 44.3820, lat: 33.2850 },
-      { name: "حي الكرادة", lng: 44.4180, lat: 33.3130 },
-      { name: "شارع فلسطين", lng: 44.4280, lat: 33.3320 },
-      { name: "السماوة - المركز", lng: 45.2944, lat: 31.3320 },
-      { name: "كورنيش السماوة", lng: 45.2845, lat: 31.3265 }
-    ];
+    function isNightNow() {
+      if (themeMode === 'night') return true;
+      if (themeMode === 'day') return false;
+      const h = new Date().getHours();
+      return h >= 18 || h < 6;
+    }
 
     const map = new maplibregl.Map({
       container: "map",
       style: "https://tiles.openfreemap.org/styles/liberty",
-      center: activeRoute[0],
-      zoom: 16.5,
+      center: activeCoords[0],
+      zoom: 16.8,
       pitch: 65,
-      bearing: -25,
+      bearing: -15,
       antialias: true
     });
 
-    // علامة موقع السائق
-    const puckEl = document.createElement('div');
-    puckEl.className = 'nav-puck';
-    puckEl.innerHTML = '<div class="nav-arrow"></div>';
-    const driverMarker = new maplibregl.Marker({ element: puckEl, pitchAlignment: 'map', rotationAlignment: 'map' })
-      .setLngLat(activeRoute[0])
-      .addTo(map);
+    // سيارة المستخدم الرئيسية
+    const userMarker = new maplibregl.Marker({
+      element: (() => {
+        const d = document.createElement('div');
+        d.className = 'user-car';
+        return d;
+      })(),
+      pitchAlignment: 'map',
+      rotationAlignment: 'map'
+    }).setLngLat(activeCoords[0]).addTo(map);
 
-    map.on("load", () => {
-      // إضاءة زرقاء ليلية تعطي عمق للمباني
+    // سيارات إضافية وأشجار موزعة حول المسار
+    const propMarkers = [];
+
+    function rebuildProps() {
+      propMarkers.forEach(m => m.remove());
+      propMarkers.length = 0;
+
+      for (let i = 0; i < activeCoords.length - 1; i++) {
+        const [lng1, lat1] = activeCoords[i];
+        const [lng2, lat2] = activeCoords[i + 1];
+
+        for (let step = 0.25; step < 1; step += 0.35) {
+          const lng = lng1 + (lng2 - lng1) * step;
+          const lat = lat1 + (lat2 - lat1) * step;
+
+          // شجرة على جانب الطريق
+          const treeEl = document.createElement('div');
+          treeEl.className = 'tree-3d';
+          propMarkers.push(
+            new maplibregl.Marker({ element: treeEl, pitchAlignment: 'map' })
+              .setLngLat([lng + 0.00018, lat + 0.00008])
+              .addTo(map)
+          );
+
+          // سيارة مرور في مسار مجاور
+          if (Math.random() > 0.35) {
+            const carEl = document.createElement('div');
+            carEl.className = 'car-3d';
+            propMarkers.push(
+              new maplibregl.Marker({ element: carEl, pitchAlignment: 'map', rotationAlignment: 'map' })
+                .setLngLat([lng - 0.00014, lat - 0.00005])
+                .addTo(map)
+            );
+          }
+        }
+      }
+    }
+
+    function applyTheme() {
+      const night = isNightNow();
+      document.getElementById('weatherBox').innerText = `${night ? '🌙' : '☀️'} ${routes[currentKey].temp}`;
+
       map.setLight({
         anchor: 'viewport',
-        color: '#bae6fd',
-        intensity: 0.65,
-        position: [1.5, 180, 55]
+        color: night ? '#cbd5e1' : '#ffffff',
+        intensity: night ? 0.55 : 0.78,
+        position: [1.5, 180, 50]
       });
 
-      // تخصيص ألوان الخريطة لتطابق الثيم الأزرق الفولاذي في التصميم
-      const styleLayers = map.getStyle().layers;
-      styleLayers.forEach(layer => {
-        if (layer.type === 'background') {
-          map.setPaintProperty(layer.id, 'background-color', '#10233c');
+      const layers = map.getStyle()?.layers || [];
+      layers.forEach(l => {
+        if (l.type === 'background') {
+          map.setPaintProperty(l.id, 'background-color', night ? '#111827' : '#e2e8f0');
         }
-        if (layer.type === 'fill' && layer.id.includes('water')) {
-          map.setPaintProperty(layer.id, 'fill-color', '#0a192f');
-        }
-        if (layer.type === 'fill' && (layer.id.includes('land') || layer.id.includes('park'))) {
-          map.setPaintProperty(layer.id, 'fill-color', '#132a46');
-        }
-        if (layer.type === 'line' && layer.id.includes('road')) {
-          map.setPaintProperty(layer.id, 'line-color', '#2c4c70');
+        if (l.type === 'line' && l.id.includes('road')) {
+          map.setPaintProperty(l.id, 'line-color', night ? '#334155' : '#ffffff');
         }
       });
 
-      // البحث عن طبقة النصوص لوضع المباني والمسار أسفلها
+      if (map.getLayer('detailed-3d-buildings')) {
+        map.setPaintProperty('detailed-3d-buildings', 'fill-extrusion-color', night
+          ? [
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 14],
+              0, '#1e293b',
+              18, '#2b3a4f',
+              35, '#3b4f6b',
+              60, '#4f688a'
+            ]
+          : [
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 14],
+              0, '#cbd5e1',
+              18, '#94a3b8',
+              35, '#64748b',
+              60, '#475569'
+            ]
+        );
+      }
+    }
+
+    map.on('load', () => {
+      const layers = map.getStyle().layers;
       let labelLayerId;
-      for (const l of styleLayers) {
+      for (const l of layers) {
         if (l.type === 'symbol' && l.layout && l.layout['text-field']) {
           labelLayerId = l.id;
           break;
@@ -373,187 +439,136 @@
       if (map.getLayer('building')) map.setLayoutProperty('building', 'visibility', 'none');
       if (map.getLayer('building-3d')) map.removeLayer('building-3d');
 
-      // مباني 3D باللون الأزرق الفولاذي مع تدرج ارتفاع
       map.addLayer({
-        id: 'nav-3d-buildings',
+        id: 'detailed-3d-buildings',
         source: 'openmaptiles',
         'source-layer': 'building',
         type: 'fill-extrusion',
-        minzoom: 13.5,
+        minzoom: 14,
         paint: {
-          'fill-extrusion-color': [
-            'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 14],
-            0, '#27496d',
-            18, '#36648b',
-            35, '#4882b4',
-            60, '#5c9ce6'
-          ],
+          'fill-extrusion-color': '#2b3a4f',
           'fill-extrusion-height': [
             'interpolate', ['linear'], ['zoom'],
-            13.5, 0,
-            14.2, ['*', ['coalesce', ['get', 'render_height'], 14], 1.4]
+            14, 0,
+            14.8, ['*', ['coalesce', ['get', 'render_height'], 14], 1.35]
           ],
           'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-          'fill-extrusion-opacity': 0.94
+          'fill-extrusion-opacity': 0.95
         }
       }, labelLayerId);
 
-      // إضافة مسار الملاحة المتوهج (Glow + Core + أسهم بيضاء)
-      map.addSource('nav-route', {
+      // مسار الملاحة مع مسار مميز بلون أزرق واضح
+      map.addSource('active-path', {
         type: 'geojson',
         data: {
           type: 'Feature',
-          geometry: { type: 'LineString', coordinates: activeRoute }
+          geometry: { type: 'LineString', coordinates: activeCoords }
         }
       });
 
       map.addLayer({
-        id: 'route-glow',
+        id: 'path-casing',
         type: 'line',
-        source: 'nav-route',
+        source: 'active-path',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': '#38bdf8',
-          'line-width': 18,
-          'line-opacity': 0.4,
-          'line-blur': 6
-        }
+        paint: { 'line-color': '#1d4ed8', 'line-width': 15, 'line-opacity': 0.85 }
       }, labelLayerId);
 
       map.addLayer({
-        id: 'route-core',
+        id: 'path-lane',
         type: 'line',
-        source: 'nav-route',
+        source: 'active-path',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': '#7dd3fc',
-          'line-width': 8,
-          'line-opacity': 0.95
-        }
+        paint: { 'line-color': '#60a5fa', 'line-width': 8, 'line-opacity': 0.95 }
       }, labelLayerId);
 
-      // أسهم بيضاء متحركة على طول المسار
-      map.addLayer({
-        id: 'route-arrows',
-        type: 'symbol',
-        source: 'nav-route',
-        layout: {
-          'symbol-placement': 'line',
-          'symbol-spacing': 45,
-          'text-field': '▲',
-          'text-size': 13,
-          'text-keep-upright': false
-        },
-        paint: {
-          'text-color': '#ffffff',
-          'text-halo-color': '#0284c7',
-          'text-halo-width': 1
-        }
-      }, labelLayerId);
-
-      // إضافة أسماء المناطق
-      landmarks.forEach(p => {
-        const el = document.createElement('div');
-        el.className = 'city-tag';
-        el.innerText = p.name;
-        new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).addTo(map);
-      });
-
-      startSimulationLoop();
+      rebuildProps();
+      applyTheme();
+      startLoop();
     });
 
-    // حساب زاوية الاتجاه بين نقطتين
-    function getBearing(start, end) {
-      const startLat = start[1] * Math.PI / 180;
-      const startLng = start[0] * Math.PI / 180;
-      const destLat = end[1] * Math.PI / 180;
-      const destLng = end[0] * Math.PI / 180;
-      const y = Math.sin(destLng - startLng) * Math.cos(destLat);
-      const x = Math.cos(startLat) * Math.sin(destLat) - Math.sin(startLat) * Math.cos(destLat) * Math.cos(destLng - startLng);
+    function calcBearing(a, b) {
+      const dLng = (b[0] - a[0]) * Math.PI / 180;
+      const lat1 = a[1] * Math.PI / 180;
+      const lat2 = b[1] * Math.PI / 180;
+      const y = Math.sin(dLng) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
       return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
     }
 
-    function startSimulationLoop() {
+    function startLoop() {
       setInterval(() => {
-        if (!isSimulating) return;
-        simProgress += 0.008;
-        if (simProgress >= activeRoute.length - 1) simProgress = 0;
+        if (!simulating) return;
+        progress += 0.007;
+        if (progress >= activeCoords.length - 1) progress = 0;
 
-        const idx = Math.floor(simProgress);
-        const frac = simProgress - idx;
-        const p1 = activeRoute[idx];
-        const p2 = activeRoute[idx + 1];
+        const i = Math.floor(progress);
+        const t = progress - i;
+        const p1 = activeCoords[i];
+        const p2 = activeCoords[i + 1];
 
-        const lng = p1[0] + (p2[0] - p1[0]) * frac;
-        const lat = p1[1] + (p2[1] - p1[1]) * frac;
-        const bearing = getBearing(p1, p2);
+        const lng = p1[0] + (p2[0] - p1[0]) * t;
+        const lat = p1[1] + (p2[1] - p1[1]) * t;
+        const brg = calcBearing(p1, p2);
 
-        driverMarker.setLngLat([lng, lat]);
+        userMarker.setLngLat([lng, lat]);
+        userMarker.setRotation(brg);
+
         map.easeTo({
           center: [lng, lat],
-          bearing: bearing,
-          pitch: is3D ? 65 : 0,
+          bearing: brg,
+          pitch: pitch3D ? 65 : 0,
           duration: 300,
-          easing: t => t
+          easing: x => x
         });
 
-        // تحديث المسافة والسرعة بشكل حي
-        const remRatio = 1 - (simProgress / (activeRoute.length - 1));
-        const remKm = Math.max(0.1, (1.5 * remRatio)).toFixed(1);
-        const remMin = Math.max(1, Math.ceil(6 * remRatio));
-        document.getElementById('distText').innerText = `بعد ${remKm} كم`;
-        document.getElementById('etaMinutes').innerText = `${remMin} دقايق`;
-        document.getElementById('etaDetails').innerText = `${remKm} كم • توصل 10:38`;
-        document.getElementById('speedVal').innerText = Math.floor(46 + Math.sin(simProgress * 5) * 4);
+        const leftRatio = Math.max(0.05, 1 - (progress / (activeCoords.length - 1)));
+        const remKm = (1.5 * leftRatio).toFixed(1);
+        const remMin = Math.max(1, Math.ceil(6 * leftRatio));
+
+        document.getElementById('hudDist').innerText = `${remKm} كم`;
+        document.getElementById('etaSummary').innerText = `${remMin} دقايق • ${remKm} كم`;
+        document.getElementById('hudSpeed').innerText = Math.floor(47 + Math.sin(progress * 6) * 3);
       }, 300);
     }
 
-    function toggle3D() {
-      is3D = !is3D;
-      document.getElementById('btn3D').classList.toggle('active-gold', is3D);
-      map.easeTo({ pitch: is3D ? 65 : 0, duration: 600 });
+    function setThemeMode(mode) {
+      themeMode = mode;
+      ['mAuto', 'mDay', 'mNight'].forEach(id => document.getElementById(id).classList.remove('active'));
+      if (mode === 'auto') document.getElementById('mAuto').classList.add('active');
+      if (mode === 'day') document.getElementById('mDay').classList.add('active');
+      if (mode === 'night') document.getElementById('mNight').classList.add('active');
+      applyTheme();
     }
 
-    function recenterCamera() {
-      isSimulating = true;
-      map.easeTo({ zoom: 16.5, pitch: is3D ? 65 : 0, duration: 600 });
+    function togglePitch() {
+      pitch3D = !pitch3D;
+      document.getElementById('btn3dToggle').classList.toggle('active', pitch3D);
+      map.easeTo({ pitch: pitch3D ? 65 : 0, duration: 500 });
     }
 
-    function resetNorth() {
-      isSimulating = false;
-      map.easeTo({ bearing: 0, duration: 600 });
-    }
-
-    function toggleSimulation() {
-      isSimulating = !isSimulating;
-    }
-
-    function toggleMute() {
-      isMuted = !isMuted;
-      document.getElementById('btnMute').innerText = isMuted ? '🔇' : '🔊';
-    }
-
-    function resetTrip() {
-      simProgress = 0;
-      isSimulating = true;
-    }
-
-    // التبديل السريع بين مسار بغداد ومسار السماوة عند الضغط على السهم السفلي
-    function switchCity() {
-      simProgress = 0;
-      if (currentCity === 'baghdad') {
-        currentCity = 'samawah';
-        activeRoute = samawahRoute;
-        document.getElementById('streetText').innerText = 'كورنيش السماوة';
-      } else {
-        currentCity = 'baghdad';
-        activeRoute = baghdadRoute;
-        document.getElementById('streetText').innerText = 'شارع دجلة';
-      }
-      map.getSource('nav-route').setData({
+    function goCity(key) {
+      currentKey = key;
+      activeCoords = routes[key].coords;
+      progress = 0;
+      document.getElementById('hudStreet').innerText = routes[key].street;
+      map.getSource('active-path').setData({
         type: 'Feature',
-        geometry: { type: 'LineString', coordinates: activeRoute }
+        geometry: { type: 'LineString', coordinates: activeCoords }
       });
+      rebuildProps();
+      applyTheme();
+    }
+
+    function switchRouteDemo() {
+      goCity(currentKey === 'baghdad' ? 'samawah' : 'baghdad');
+    }
+
+    function toggleSim() { simulating = !simulating; }
+    function recenterNorth() { simulating = false; map.easeTo({ bearing: 0, duration: 500 }); }
+    function toggleSound() {
+      muted = !muted;
+      document.getElementById('soundBtn').innerText = muted ? '🔇' : '🔊';
     }
   </script>
 </body>
