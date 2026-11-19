@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>خريطة العراق 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>خريطة العراق 3D - دقة عالية</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&display=swap" rel="stylesheet" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -12,36 +12,43 @@
     body, html, #map {
       margin: 0; padding: 0; width: 100%; height: 100%;
       background: #050811; font-family: 'Cairo', sans-serif;
+      overflow: hidden;
     }
     .panel {
       position: fixed; top: 12px; right: 12px; z-index: 20;
-      background: rgba(10, 15, 28, 0.94); color: #f8fafc;
-      padding: 10px 12px; border-radius: 12px; font-size: 13px;
+      background: rgba(10, 15, 28, 0.92); color: #f8fafc;
+      padding: 10px 12px; border-radius: 14px; font-size: 13px;
       border: 1px solid rgba(251, 191, 36, 0.4);
+      backdrop-filter: blur(8px);
       display: flex; flex-direction: column; gap: 8px; max-width: 280px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
     .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
     button {
-      background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.2);
+      background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.18);
       border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;
-      font-family: 'Cairo', sans-serif;
+      font-family: 'Cairo', sans-serif; transition: 0.2s;
     }
-    button.active { background: #f59e0b; color: #090d16; font-weight: 700; }
+    button:active { transform: scale(0.96); }
+    button.active { background: #f59e0b; color: #090d16; font-weight: 700; border-color: #f59e0b; }
+    
     .ar-label {
       background: rgba(9, 13, 22, 0.92);
       color: #fde047;
       border: 1px solid #f59e0b;
-      padding: 3px 9px;
+      padding: 3px 10px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 700;
       white-space: nowrap;
       pointer-events: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
     .ar-label.day {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.96);
       color: #0f172a;
-      border-color: #1e293b;
+      border-color: #334155;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
   </style>
 </head>
@@ -62,6 +69,12 @@
   <div id="map"></div>
 
   <script>
+    // تفعيل دعم رسم النصوص العربية المتصلة بشكل صحيح في MapLibre
+    maplibregl.setRTLTextPlugin(
+      'https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js',
+      true
+    );
+
     let currentMode = 'auto';
     let is3D = true;
     const markers = [];
@@ -77,72 +90,10 @@
 
     const lightsGeoJSON = {
       type: "FeatureCollection",
-      features: [
-        { type: "Feature", geometry: { type: "Point", coordinates: [44.3820, 33.2850] } },
-        { type: "Feature", geometry: { type: "Point", coordinates: [44.4054, 33.3267] } },
-        { type: "Feature", geometry: { type: "Point", coordinates: [44.4265, 33.3075] } },
-        { type: "Feature", geometry: { type: "Point", coordinates: [44.3462, 33.3128] } },
-        { type: "Feature", geometry: { type: "Point", coordinates: [44.3661, 33.3152] } },
-        { type: "Feature", geometry: { type: "Point", coordinates: [45.2944, 31.3320] } },
-        { type: "Feature", geometry: { type: "Point", coordinates: [45.2845, 31.3265] } }
-      ]
-    };
-
-    // مجمعات ومبانٍ 3D بارتفاعات متنوعة حول الجادرية وبغداد والسماوة
-    const buildingsGeoJSON = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          properties: { height: 65, tier: "tall" },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[
-              [44.3805, 33.2842], [44.3822, 33.2842], [44.3822, 33.2856], [44.3805, 33.2856], [44.3805, 33.2842]
-            ]]
-          }
-        },
-        {
-          type: "Feature",
-          properties: { height: 42, tier: "mid" },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[
-              [44.3832, 33.2846], [44.3848, 33.2846], [44.3848, 33.2859], [44.3832, 33.2859], [44.3832, 33.2846]
-            ]]
-          }
-        },
-        {
-          type: "Feature",
-          properties: { height: 28, tier: "low" },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[
-              [44.3810, 33.2862], [44.3830, 33.2862], [44.3830, 33.2873], [44.3810, 33.2873], [44.3810, 33.2862]
-            ]]
-          }
-        },
-        {
-          type: "Feature",
-          properties: { height: 75, tier: "tall" },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[
-              [44.4045, 33.3260], [44.4063, 33.3260], [44.4063, 33.3274], [44.4045, 33.3274], [44.4045, 33.3260]
-            ]]
-          }
-        },
-        {
-          type: "Feature",
-          properties: { height: 52, tier: "mid" },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[
-              [45.2932, 31.3312], [45.2952, 31.3312], [45.2952, 31.3327], [45.2932, 31.3327], [45.2932, 31.3312]
-            ]]
-          }
-        }
-      ]
+      features: places.map(p => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [p.lng, p.lat] }
+      }))
     };
 
     function isNight() {
@@ -152,77 +103,77 @@
       return h >= 18 || h < 6;
     }
 
+    // استخدام ستايل فيكتور عالي الدقة (OpenFreeMap) بدل الصور الضبابية
     const map = new maplibregl.Map({
       container: "map",
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: "© OpenStreetMap"
-          },
-          lights: {
-            type: "geojson",
-            data: lightsGeoJSON
-          },
-          buildings: {
-            type: "geojson",
-            data: buildingsGeoJSON
-          }
-        },
-        layers: [
-          {
-            id: "base-map",
-            type: "raster",
-            source: "osm",
-            paint: {
-              "raster-brightness-max": 0.25,
-              "raster-contrast": 0.35,
-              "raster-saturation": -0.65
-            }
-          },
-          {
-            id: "buildings-3d",
-            type: "fill-extrusion",
-            source: "buildings",
-            paint: {
-              "fill-extrusion-color": "#f59e0b",
-              "fill-extrusion-height": ["get", "height"],
-              "fill-extrusion-opacity": 0.92
-            }
-          },
-          {
-            id: "lights-glow",
-            type: "circle",
-            source: "lights",
-            paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 16, 16, 48],
-              "circle-color": "#fbbf24",
-              "circle-blur": 0.95,
-              "circle-opacity": 0.65
-            }
-          },
-          {
-            id: "lights-core",
-            type: "circle",
-            source: "lights",
-            paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 4, 16, 8],
-              "circle-color": "#fef08a",
-              "circle-opacity": 1
-            }
-          }
-        ]
-      },
+      style: "https://tiles.openfreemap.org/styles/liberty",
       center: [44.3820, 33.2850],
-      zoom: 15.2,
+      zoom: 15.8,
       pitch: 60,
-      bearing: -15
+      bearing: -15,
+      antialias: true // تنعيم حواف المباني ثلاثية الأبعاد
     });
 
-    map.addControl(new maplibregl.NavigationControl());
+    map.addControl(new maplibregl.NavigationControl(), 'bottom-left');
+
+    function setupCustomLayers() {
+      const layers = map.getStyle().layers;
+      // البحث عن أول طبقة نصوص لوضع المباني أسفلها حتى لا تختفي أسماء الشوارع
+      let labelLayerId;
+      for (let i = 0; i < layers.length; i++) {
+        if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+          labelLayerId = layers[i].id;
+          break;
+        }
+      }
+
+      // إخفاء طبقة المباني المسطحة الافتراضية إن وجدت
+      if (map.getLayer('building')) map.setLayoutProperty('building', 'visibility', 'none');
+      if (map.getLayer('building-3d')) map.removeLayer('building-3d');
+
+      // إضافة طبقة مباني 3D حقيقية لكل العراق من بيانات OpenStreetMap Vector
+      map.addLayer({
+        'id': 'iraq-3d-buildings',
+        'source': 'openmaptiles',
+        'source-layer': 'building',
+        'type': 'fill-extrusion',
+        'minzoom': 14,
+        'paint': {
+          'fill-extrusion-color': [
+            'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 12],
+            0, '#cbd5e1',
+            20, '#94a3b8',
+            50, '#64748b'
+          ],
+          // استخدام الارتفاع الحقيقي للمبنى، وإذا لم يكن مسجلاً نعطيه ارتفاعاً افتراضياً منطقياً (10 متر)
+          'fill-extrusion-height': [
+            'interpolate', ['linear'], ['zoom'],
+            14, 0,
+            14.5, ['coalesce', ['get', 'render_height'], 10]
+          ],
+          'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+          'fill-extrusion-opacity': 0.92
+        }
+      }, labelLayerId);
+
+      // إضافة مصدر الإضاءات الليلية
+      if (!map.getSource('lights')) {
+        map.addSource('lights', { type: 'geojson', data: lightsGeoJSON });
+        map.addLayer({
+          id: "lights-glow",
+          type: "circle",
+          source: "lights",
+          paint: {
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 18, 16, 55],
+            "circle-color": "#fbbf24",
+            "circle-blur": 0.9,
+            "circle-opacity": 0.65
+          }
+        });
+      }
+
+      updateVisuals();
+    }
 
     function renderLabels(night) {
       markers.forEach(m => m.remove());
@@ -241,24 +192,41 @@
         ? (currentMode === "auto" ? "الوضع الليلي التلقائي مفعّل 🌙" : "الوضع الليلي مفعّل 🌙")
         : (currentMode === "auto" ? "الوضع النهاري التلقائي مفعّل ☀️" : "الوضع النهاري مفعّل ☀️");
 
-      if (map.getLayer("base-map")) {
-        map.setPaintProperty("base-map", "raster-brightness-max", night ? 0.25 : 0.95);
-        map.setPaintProperty("base-map", "raster-contrast", night ? 0.35 : 0.15);
-        map.setPaintProperty("base-map", "raster-saturation", night ? -0.65 : -0.2);
+      // ضبط إضاءة المشهد ثلاثي الأبعاد لإبراز زوايا المباني والظلال
+      map.setLight({
+        anchor: 'viewport',
+        color: night ? '#fbbf24' : '#ffffff',
+        intensity: night ? 0.35 : 0.6,
+        position: [1.5, 180, 45]
+      });
+
+      // تلوين الخلفية والشوارع حسب الوضع النهاري أو الليلي
+      if (map.getLayer('background')) {
+        map.setPaintProperty('background', 'background-color', night ? '#070b14' : '#f1f5f9');
       }
 
-      if (map.getLayer("buildings-3d")) {
-        map.setPaintProperty("buildings-3d", "fill-extrusion-color", night
-          ? ["match", ["get", "tier"], "tall", "#f59e0b", "mid", "#d97706", "#b45309"]
-          : ["match", ["get", "tier"], "tall", "#475569", "mid", "#64748b", "#94a3b8"]
+      // تلوين المباني بتدرج واقعي حسب الارتفاع
+      if (map.getLayer('iraq-3d-buildings')) {
+        map.setPaintProperty('iraq-3d-buildings', 'fill-extrusion-color', night
+          ? [
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
+              0, '#1e293b',
+              15, '#334155',
+              35, '#b45309',
+              60, '#f59e0b'
+            ]
+          : [
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
+              0, '#e2e8f0',
+              15, '#cbd5e1',
+              35, '#94a3b8',
+              60, '#64748b'
+            ]
         );
       }
 
       if (map.getLayer("lights-glow")) {
-        map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.65 : 0.05);
-      }
-      if (map.getLayer("lights-core")) {
-        map.setPaintProperty("lights-core", "circle-opacity", night ? 1 : 0.25);
+        map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.65 : 0);
       }
 
       renderLabels(night);
@@ -273,16 +241,15 @@
     }
 
     function focusPlace(lng, lat) {
-      map.flyTo({ center: [lng, lat], zoom: 15.2, pitch: is3D ? 60 : 0 });
+      map.flyTo({ center: [lng, lat], zoom: 16, pitch: is3D ? 60 : 0, essential: true });
     }
 
     function toggle3D() {
       is3D = !is3D;
-      map.easeTo({ pitch: is3D ? 60 : 0 });
+      map.easeTo({ pitch: is3D ? 60 : 0, duration: 800 });
     }
 
-    updateVisuals();
-    map.on("load", updateVisuals);
+    map.on("load", setupCustomLayers);
   </script>
 </body>
 </html>
