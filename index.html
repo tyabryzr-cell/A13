@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>خريطة الملاحة 3D — مجسمات بيوت</title>
+  <title>خريطة وملاحة العراق — MapMax Style</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&display=swap" rel="stylesheet" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -15,6 +15,7 @@
       overflow: hidden;
     }
 
+    /* لوحة التحكم العلوية */
     .top-panel {
       position: fixed; top: 10px; right: 10px; left: 10px; z-index: 30;
       background: rgba(10, 15, 28, 0.94); color: #f8fafc;
@@ -23,7 +24,7 @@
       backdrop-filter: blur(8px);
       display: flex; flex-direction: column; gap: 8px;
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
-      max-width: 440px;
+      max-width: 460px;
     }
     .top-panel.day-ui {
       background: rgba(255, 255, 255, 0.96);
@@ -33,14 +34,14 @@
 
     .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
-    button, select {
+    button, input {
       background: #1e293b; color: #f8fafc;
       border: 1px solid rgba(255,255,255,0.16);
       border-radius: 9px; padding: 6px 10px;
-      font-size: 12px; font-weight: 700; cursor: pointer;
+      font-size: 12px; font-weight: 700;
       font-family: 'Cairo', sans-serif;
-      white-space: nowrap;
     }
+    button { cursor: pointer; white-space: nowrap; }
     button:active { transform: scale(0.96); }
     button.active {
       background: #f59e0b; color: #090d16;
@@ -51,7 +52,7 @@
       border-color: #38bdf8;
     }
 
-    .day-ui button, .day-ui select {
+    .day-ui button, .day-ui input {
       background: #e2e8f0; color: #0f172a;
       border-color: rgba(15, 23, 42, 0.14);
     }
@@ -59,22 +60,53 @@
       background: #d97706; color: #ffffff; border-color: #d97706;
     }
 
-    .gps-trip-bar {
+    /* بطاقة الأماكن والملاحة بأسلوب MapMax */
+    .max-card {
       position: fixed; bottom: 56px; right: 10px; left: 10px; z-index: 30;
-      background: rgba(10, 15, 28, 0.94); color: #f8fafc;
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      border-radius: 14px; padding: 8px 10px;
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
-      font-size: 12px; font-weight: 700;
+      background: rgba(10, 15, 28, 0.95); color: #f8fafc;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 16px; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 8px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+      max-width: 480px;
     }
-    .gps-trip-bar.day-ui {
-      background: rgba(255, 255, 255, 0.96);
+    .max-card.day-ui {
+      background: rgba(255, 255, 255, 0.97);
       color: #0f172a;
       border-color: rgba(15, 23, 42, 0.2);
     }
 
+    .search-box { display: flex; gap: 6px; }
+    .search-box input { flex: 1; outline: none; }
+
+    .places-chips {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;
+    }
+    .place-chip {
+      flex-shrink: 0;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px; padding: 5px 10px;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .place-chip.selected {
+      background: #0284c7; color: #ffffff; border-color: #38bdf8;
+    }
+    .day-ui .place-chip {
+      background: #f1f5f9; color: #0f172a;
+    }
+    .day-ui .place-chip.selected {
+      background: #0284c7; color: #ffffff;
+    }
+
+    .route-summary {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; font-weight: 800; color: #38bdf8;
+    }
+    .day-ui .route-summary { color: #0369a1; }
+
+    /* شريط المحافظات */
     .gov-bar {
       position: fixed; bottom: 8px; right: 10px; left: 10px; z-index: 30;
       background: rgba(10, 15, 28, 0.94);
@@ -115,20 +147,19 @@
     </div>
   </div>
 
-  <div class="gps-trip-bar" id="gpsBar">
-    <div>
-      <div id="tripStatus">موقعك مفعّل • اضغط على الخريطة لرسم مسار</div>
-      <div id="speedStatus" style="color:#38bdf8;">السرعة: 0 كم/س</div>
-    </div>
-    <div class="row">
-      <select id="quickDest" onchange="goQuickDest()">
-        <option value="">وجهة سريعة...</option>
-        <option value="45.2845,31.3265">كورنيش السماوة</option>
-        <option value="45.2944,31.3320">مركز السماوة</option>
-        <option value="44.4054,33.3267">ساحة التحرير - بغداد</option>
-        <option value="44.3820,33.2850">الجادرية - بغداد</option>
-      </select>
+  <!-- بطاقة الأماكن والملاحة (أسلوب MapMax) -->
+  <div class="max-card" id="maxCard">
+    <div class="search-box">
+      <input id="searchInput" type="text" placeholder="ابحث عن مكان أو شارع في العراق..." oninput="filterQuickPlaces()" onkeydown="if(event.key==='Enter') searchByName()" />
+      <button class="active" onclick="searchByName()">ملاحة</button>
       <button onclick="clearRoute()">مسح</button>
+    </div>
+
+    <div class="places-chips" id="placesList"></div>
+
+    <div class="route-summary">
+      <span id="routeText">اختر موقعاً من القائمة أو اضغط على الخريطة</span>
+      <span id="speedText">السرعة: 0 كم/س</span>
     </div>
   </div>
 
@@ -142,31 +173,41 @@
     );
 
     const govs = [
-      { id: "muthanna", name: "السماوة (المثنى)", lng: 45.2944, lat: 31.3320, zoom: 16.3 },
-      { id: "baghdad", name: "بغداد", lng: 44.3820, lat: 33.2850, zoom: 16.2 },
-      { id: "najaf", name: "النجف", lng: 44.3462, lat: 31.9960, zoom: 16.2 },
-      { id: "basra", name: "البصرة", lng: 47.7804, lat: 30.5085, zoom: 16.0 },
-      { id: "karbala", name: "كربلاء", lng: 44.0249, lat: 32.6160, zoom: 16.1 },
-      { id: "erbil", name: "أربيل", lng: 44.0092, lat: 36.1911, zoom: 16.0 },
-      { id: "mosul", name: "الموصل", lng: 43.1189, lat: 36.3400, zoom: 16.0 },
-      { id: "babylon", name: "بابل", lng: 44.4267, lat: 32.4637, zoom: 16.1 },
-      { id: "dhiqar", name: "ذي قار", lng: 46.2573, lat: 31.0437, zoom: 16.1 },
-      { id: "wasit", name: "واسط", lng: 45.8173, lat: 32.5128, zoom: 16.1 },
-      { id: "maysan", name: "ميسان", lng: 47.1450, lat: 31.8356, zoom: 16.1 },
-      { id: "diwaniya", name: "الديوانية", lng: 44.9255, lat: 31.9922, zoom: 16.1 },
-      { id: "anbar", name: "الأنبار", lng: 43.3078, lat: 33.4262, zoom: 16.0 },
-      { id: "diyala", name: "ديالى", lng: 44.6380, lat: 33.7540, zoom: 16.1 },
-      { id: "salahaddin", name: "صلاح الدين", lng: 43.6786, lat: 34.6120, zoom: 16.0 },
-      { id: "kirkuk", name: "كركوك", lng: 44.3666, lat: 35.4681, zoom: 16.0 },
-      { id: "duhok", name: "دهوك", lng: 42.9504, lat: 36.8675, zoom: 16.0 },
-      { id: "sulaymaniyah", name: "السليمانية", lng: 45.4329, lat: 35.5570, zoom: 16.0 }
+      { id: "muthanna", name: "السماوة (المثنى)", lng: 45.2944, lat: 31.3320, zoom: 16.2 },
+      { id: "baghdad", name: "بغداد", lng: 44.3820, lat: 33.2850, zoom: 16.0 },
+      { id: "najaf", name: "النجف", lng: 44.3462, lat: 31.9960, zoom: 16.0 },
+      { id: "basra", name: "البصرة", lng: 47.7804, lat: 30.5085, zoom: 15.8 },
+      { id: "karbala", name: "كربلاء", lng: 44.0249, lat: 32.6160, zoom: 15.9 },
+      { id: "erbil", name: "أربيل", lng: 44.0092, lat: 36.1911, zoom: 15.8 },
+      { id: "mosul", name: "الموصل", lng: 43.1189, lat: 36.3400, zoom: 15.8 },
+      { id: "babylon", name: "بابل", lng: 44.4267, lat: 32.4637, zoom: 15.9 },
+      { id: "dhiqar", name: "ذي قار", lng: 46.2573, lat: 31.0437, zoom: 15.9 },
+      { id: "wasit", name: "واسط", lng: 45.8173, lat: 32.5128, zoom: 15.9 },
+      { id: "maysan", name: "ميسان", lng: 47.1450, lat: 31.8356, zoom: 15.9 },
+      { id: "diwaniya", name: "الديوانية", lng: 44.9255, lat: 31.9922, zoom: 15.9 },
+      { id: "anbar", name: "الأنبار", lng: 43.3078, lat: 33.4262, zoom: 15.8 },
+      { id: "diyala", name: "ديالى", lng: 44.6380, lat: 33.7540, zoom: 15.9 },
+      { id: "salahaddin", name: "صلاح الدين", lng: 43.6786, lat: 34.6120, zoom: 15.8 },
+      { id: "kirkuk", name: "كركوك", lng: 44.3666, lat: 35.4681, zoom: 15.8 },
+      { id: "duhok", name: "دهوك", lng: 42.9504, lat: 36.8675, zoom: 15.8 },
+      { id: "sulaymaniyah", name: "السليمانية", lng: 45.4329, lat: 35.5570, zoom: 15.8 }
+    ];
+
+    const quickPlaces = [
+      { id: "p1", name: "كورنيش السماوة", lng: 45.2845, lat: 31.3265 },
+      { id: "p2", name: "مركز السماوة", lng: 45.2944, lat: 31.3320 },
+      { id: "p3", name: "ساحة التحرير - بغداد", lng: 44.4054, lat: 33.3267 },
+      { id: "p4", name: "الجادرية - بغداد", lng: 44.3820, lat: 33.2850 },
+      { id: "p5", name: "مركز النجف", lng: 44.3462, lat: 31.9960 },
+      { id: "p6", name: "مركز البصرة", lng: 47.7804, lat: 30.5085 }
     ];
 
     let currentMode = 'auto';
     let is3D = true;
-    let isSatellite = false; // مطفأ افتراضياً لتجنب صور القمر الصناعي الضبابية
+    let isSatellite = false;
     let watchId = null;
     let currentPos = [45.2944, 31.3320];
+    let selectedPlaceId = null;
     let userMarker = null;
     let destMarker = null;
 
@@ -180,48 +221,29 @@
       govBar.appendChild(b);
     });
 
-    // توليد مجسمات بيوت سكنية حول مركز المنطقة الحالية لتغطية الأحياء غير المرسومة في OSM
-    function createHouseBlocksAround(centerLng, centerLat) {
-      const features = [];
-      let seed = Math.abs(Math.floor((centerLng * 10000) + (centerLat * 10000))) || 777;
-      const rnd = () => {
-        seed = (seed * 16807) % 2147483647;
-        return (seed - 1) / 2147483646;
-      };
+    function renderQuickPlaces(list = quickPlaces) {
+      const container = document.getElementById('placesList');
+      container.innerHTML = '';
+      list.forEach(p => {
+        const chip = document.createElement('div');
+        chip.className = 'place-chip' + (p.id === selectedPlaceId ? ' selected' : '');
+        chip.innerText = p.name;
+        chip.onclick = () => {
+          selectedPlaceId = p.id;
+          renderQuickPlaces(list);
+          startNavigationTo(p.lng, p.lat, p.name);
+        };
+        container.appendChild(chip);
+      });
+    }
 
-      const stepLng = 0.00034;
-      const stepLat = 0.00030;
-
-      for (let r = -8; r <= 8; r++) {
-        for (let c = -8; c <= 8; c++) {
-          // ترك ممرات وأزقة بين الكتل
-          if (Math.abs(r) % 3 === 0 || Math.abs(c) % 3 === 0) continue;
-          if (rnd() < 0.18) continue;
-
-          const cx = centerLng + c * stepLng;
-          const cy = centerLat + r * stepLat;
-          const w = stepLng * (0.62 + rnd() * 0.18);
-          const h = stepLat * (0.62 + rnd() * 0.18);
-          const height = Math.floor(6.5 + rnd() * 4.5); // ارتفاع بيت سكني متناسق
-
-          features.push({
-            type: "Feature",
-            properties: { height },
-            geometry: {
-              type: "Polygon",
-              coordinates: [[
-                [cx - w / 2, cy - h / 2],
-                [cx + w / 2, cy - h / 2],
-                [cx + w / 2, cy + h / 2],
-                [cx - w / 2, cy + h / 2],
-                [cx - w / 2, cy - h / 2]
-              ]]
-            }
-          });
-        }
+    function filterQuickPlaces() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!q) {
+        renderQuickPlaces(quickPlaces);
+        return;
       }
-
-      return { type: "FeatureCollection", features };
+      renderQuickPlaces(quickPlaces.filter(p => p.name.toLowerCase().includes(q)));
     }
 
     function isNight() {
@@ -235,7 +257,7 @@
       container: "map",
       style: "https://tiles.openfreemap.org/styles/liberty",
       center: currentPos,
-      zoom: 16.3,
+      zoom: 16.2,
       pitch: 60,
       bearing: -12,
       antialias: true
@@ -269,28 +291,8 @@
       if (map.getLayer('building')) map.setLayoutProperty('building', 'visibility', 'none');
       if (map.getLayer('building-3d')) map.removeLayer('building-3d');
 
-      // مجسمات بيوت المنطقة الحالية
-      map.addSource('area-houses', {
-        type: 'geojson',
-        data: createHouseBlocksAround(currentPos[0], currentPos[1])
-      });
-
       map.addLayer({
-        id: 'area-houses-3d',
-        source: 'area-houses',
-        type: 'fill-extrusion',
-        minzoom: 14.2,
-        paint: {
-          'fill-extrusion-color': '#334155',
-          'fill-extrusion-height': ['get', 'height'],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.92
-        }
-      }, firstSymbolId);
-
-      // مباني OSM الحقيقية
-      map.addLayer({
-        id: 'osm-buildings-3d',
+        id: 'osm-3d',
         source: 'openmaptiles',
         'source-layer': 'building',
         type: 'fill-extrusion',
@@ -303,68 +305,82 @@
             14.8, ['min', 45, ['*', ['coalesce', ['get', 'render_height'], 10], 1.15]]
           ],
           'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-          'fill-extrusion-opacity': 0.95
+          'fill-extrusion-opacity': 0.92
         }
       }, firstSymbolId);
 
-      // مسار الرحلة الحقيقي (OSRM)
-      map.addSource('route-src', {
+      map.addSource('nav-route', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] }
       });
 
       map.addLayer({
-        id: 'route-line',
+        id: 'nav-route-line',
         type: 'line',
-        source: 'route-src',
+        source: 'nav-route',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#38bdf8', 'line-width': 6, 'line-opacity': 0.95 }
+        paint: { 'line-color': '#38bdf8', 'line-width': 6.5, 'line-opacity': 0.95 }
       }, firstSymbolId);
 
+      renderQuickPlaces();
       updateTheme();
     });
 
-    async function drawRouteTo(destLng, destLat, label = "الوجهة") {
-      document.getElementById('tripStatus').innerText = 'جاري حساب المسار...';
+    async function startNavigationTo(destLng, destLat, title = "الوجهة") {
+      document.getElementById('routeText').innerText = `جاري حساب المسار إلى ${title}...`;
       try {
         const url = `https://router.project-osrm.org/route/v1/driving/${currentPos[0]},${currentPos[1]};${destLng},${destLat}?overview=full&geometries=geojson`;
         const res = await fetch(url);
         const data = await res.json();
         if (!data.routes || !data.routes.length) {
-          document.getElementById('tripStatus').innerText = 'تعذر إيجاد مسار';
+          document.getElementById('routeText').innerText = 'تعذر إيجاد مسار';
           return;
         }
         const r = data.routes[0];
-        map.getSource('route-src').setData({ type: 'Feature', geometry: r.geometry });
+        map.getSource('nav-route').setData({ type: 'Feature', geometry: r.geometry });
         if (destMarker) destMarker.remove();
         destMarker = new maplibregl.Marker({ color: '#ef4444' }).setLngLat([destLng, destLat]).addTo(map);
         const km = (r.distance / 1000).toFixed(1);
         const mins = Math.max(1, Math.round(r.duration / 60));
-        document.getElementById('tripStatus').innerText = `${label}: ${km} كم • ${mins} دقيقة`;
+        document.getElementById('routeText').innerText = `${title}: ${km} كم • ${mins} دقيقة`;
+        map.flyTo({ center: [destLng, destLat], zoom: 15.4, pitch: is3D ? 60 : 0, duration: 850 });
       } catch (e) {
-        document.getElementById('tripStatus').innerText = 'خطأ في جلب المسار';
+        document.getElementById('routeText').innerText = 'خطأ أثناء حساب المسار';
       }
     }
 
-    function goQuickDest() {
-      const v = document.getElementById('quickDest').value;
-      if (!v) return;
-      const [lng, lat] = v.split(',').map(Number);
-      drawRouteTo(lng, lat, 'وجهة سريعة');
+    async function searchByName() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+      document.getElementById('routeText').innerText = `جاري البحث عن "${q}"...`;
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=iq&limit=1&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url);
+        const list = await res.json();
+        if (!list || !list.length) {
+          document.getElementById('routeText').innerText = 'لم يتم العثور على المكان';
+          return;
+        }
+        startNavigationTo(parseFloat(list[0].lon), parseFloat(list[0].lat), q);
+      } catch (e) {
+        document.getElementById('routeText').innerText = 'خطأ في البحث';
+      }
     }
 
     function clearRoute() {
-      document.getElementById('quickDest').value = '';
-      if (map.getSource('route-src')) {
-        map.getSource('route-src').setData({ type: 'FeatureCollection', features: [] });
+      selectedPlaceId = null;
+      document.getElementById('searchInput').value = '';
+      renderQuickPlaces();
+      if (map.getSource('nav-route')) {
+        map.getSource('nav-route').setData({ type: 'FeatureCollection', features: [] });
       }
       if (destMarker) { destMarker.remove(); destMarker = null; }
-      document.getElementById('tripStatus').innerText = 'اضغط على الخريطة لرسم مسار';
+      document.getElementById('routeText').innerText = 'اختر موقعاً من القائمة أو اضغط على الخريطة';
     }
 
     map.on('click', (e) => {
-      if (e.originalEvent.target.closest('button, select, .top-panel, .gps-trip-bar, .gov-bar')) return;
-      drawRouteTo(e.lngLat.lng, e.lngLat.lat, 'نقطة مختارة');
+      if (e.originalEvent.target.closest('button, input, .top-panel, .max-card, .gov-bar')) return;
+      startNavigationTo(e.lngLat.lng, e.lngLat.lat, 'نقطة مختارة');
     });
 
     function toggleGPS() {
@@ -373,7 +389,7 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
         btn.classList.remove('gps-active');
-        document.getElementById('speedStatus').innerText = 'GPS متوقف';
+        document.getElementById('speedText').innerText = 'GPS متوقف';
         return;
       }
       if (!navigator.geolocation) {
@@ -385,11 +401,6 @@
         (pos) => {
           const { latitude, longitude, speed } = pos.coords;
           currentPos = [longitude, latitude];
-
-          if (map.getSource('area-houses')) {
-            map.getSource('area-houses').setData(createHouseBlocksAround(longitude, latitude));
-          }
-
           if (!userMarker) {
             const el = document.createElement('div');
             el.className = 'user-puck';
@@ -397,16 +408,14 @@
           } else {
             userMarker.setLngLat(currentPos);
           }
-
-          map.flyTo({ center: currentPos, zoom: 16.4, pitch: is3D ? 60 : 0, duration: 700 });
+          map.flyTo({ center: currentPos, zoom: 16.3, pitch: is3D ? 60 : 0, duration: 700 });
           const kmh = (typeof speed === 'number' && !isNaN(speed) && speed >= 0) ? Math.round(speed * 3.6) : 0;
-          document.getElementById('speedStatus').innerText = `السرعة: ${kmh} كم/س`;
-          document.getElementById('tripStatus').innerText = 'موقعك مفعّل • اضغط على الخريطة لرسم مسار';
+          document.getElementById('speedText').innerText = `السرعة: ${kmh} كم/س`;
         },
         () => {
           watchId = null;
           btn.classList.remove('gps-active');
-          document.getElementById('tripStatus').innerText = 'تأكد من تفعيل صلاحية الموقع في المتصفح';
+          document.getElementById('routeText').innerText = 'يرجى تفعيل صلاحية الموقع في المتصفح';
         },
         { enableHighAccuracy: true, maximumAge: 1000 }
       );
@@ -418,7 +427,7 @@
         ? (currentMode === 'auto' ? 'الوضع الليلي التلقائي مفعّل 🌙' : 'الوضع الليلي مفعّل 🌙')
         : (currentMode === 'auto' ? 'الوضع النهاري التلقائي مفعّل ☀️' : 'الوضع النهاري مفعّل ☀️');
 
-      ['topPanel', 'gpsBar', 'govBar'].forEach(id => {
+      ['topPanel', 'maxCard', 'govBar'].forEach(id => {
         document.getElementById(id).classList.toggle('day-ui', !night);
       });
 
@@ -434,7 +443,7 @@
       }
 
       (map.getStyle()?.layers || []).forEach(l => {
-        if (['sat-layer', 'area-houses-3d', 'osm-buildings-3d', 'route-line'].includes(l.id)) return;
+        if (['sat-layer', 'osm-3d', 'nav-route-line'].includes(l.id)) return;
         if (l.type === 'background') {
           map.setPaintProperty(l.id, 'background-color', night ? '#090f1d' : '#e2e8f0');
         }
@@ -443,12 +452,8 @@
         }
       });
 
-      if (map.getLayer('area-houses-3d')) {
-        map.setPaintProperty('area-houses-3d', 'fill-extrusion-color', night ? '#334155' : '#cbd5e1');
-      }
-
-      if (map.getLayer('osm-buildings-3d')) {
-        map.setPaintProperty('osm-buildings-3d', 'fill-extrusion-color', night
+      if (map.getLayer('osm-3d')) {
+        map.setPaintProperty('osm-3d', 'fill-extrusion-color', night
           ? [
               'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
               0, '#1e293b',
@@ -484,18 +489,15 @@
       is3D = !is3D;
       document.getElementById('btn3D').classList.toggle('active', is3D);
       map.easeTo({ pitch: is3D ? 60 : 0, duration: 500 });
-      ['area-houses-3d', 'osm-buildings-3d'].forEach(id => {
-        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', is3D ? 'visible' : 'none');
-      });
+      if (map.getLayer('osm-3d')) {
+        map.setLayoutProperty('osm-3d', 'visibility', is3D ? 'visible' : 'none');
+      }
     }
 
     function focusGov(id) {
       const g = govs.find(x => x.id === id);
       if (!g) return;
       if (watchId === null) currentPos = [g.lng, g.lat];
-      if (map.getSource('area-houses')) {
-        map.getSource('area-houses').setData(createHouseBlocksAround(g.lng, g.lat));
-      }
       document.querySelectorAll('.gov-btn').forEach(b => b.classList.remove('active'));
       const el = document.getElementById('gbtn-' + id);
       if (el) el.classList.add('active');
