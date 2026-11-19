@@ -11,11 +11,11 @@
     * { box-sizing: border-box; }
     body, html, #map {
       margin: 0; padding: 0; width: 100%; height: 100%;
-      background: #050811; font-family: 'Cairo', sans-serif;
+      background: #0b1120; font-family: 'Cairo', sans-serif;
     }
     .panel {
       position: fixed; top: 12px; right: 12px; z-index: 20;
-      background: rgba(10, 15, 28, 0.95); color: #f8fafc;
+      background: rgba(10, 15, 28, 0.94); color: #f8fafc;
       padding: 10px 12px; border-radius: 12px; font-size: 13px;
       border: 1px solid rgba(251, 191, 36, 0.4);
       display: flex; flex-direction: column; gap: 8px; max-width: 280px;
@@ -27,27 +27,27 @@
       font-family: 'Cairo', sans-serif;
     }
     button.active { background: #f59e0b; color: #090d16; font-weight: 700; }
-    .ar-pin {
+    .ar-label {
       background: rgba(9, 13, 22, 0.92);
       color: #fde047;
       border: 1px solid #f59e0b;
-      padding: 3px 8px;
+      padding: 3px 9px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 700;
       white-space: nowrap;
       pointer-events: none;
     }
-    .ar-pin.day {
+    .ar-label.day {
       background: rgba(255, 255, 255, 0.95);
       color: #0f172a;
-      border-color: #334155;
+      border-color: #1e293b;
     }
   </style>
 </head>
 <body>
   <div class="panel">
-    <div id="modeBadge">الوضع الليلي التلقائي مفعّل 🌙</div>
+    <div id="modeBadge">جاري تشغيل الخريطة...</div>
     <div class="btn-row">
       <button id="btnAuto" class="active" onclick="setMode('auto')">تلقائي</button>
       <button id="btnDay" onclick="setMode('day')">نهاري ☀️</button>
@@ -64,7 +64,7 @@
   <script>
     let currentMode = 'auto';
     let is3D = true;
-    const pins = [];
+    const markers = [];
 
     const places = [
       { name: "بغداد - ساحة التحرير", lng: 44.4054, lat: 33.3267 },
@@ -88,6 +88,32 @@
       ]
     };
 
+    const buildingsGeoJSON = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { height: 70 },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [44.3645, 33.3142], [44.3665, 33.3142], [44.3665, 33.3158], [44.3645, 33.3158], [44.3645, 33.3142]
+            ]]
+          }
+        },
+        {
+          type: "Feature",
+          properties: { height: 55 },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [45.2930, 31.3310], [45.2952, 31.3310], [45.2952, 31.3328], [45.2930, 31.3328], [45.2930, 31.3310]
+            ]]
+          }
+        }
+      ]
+    };
+
     function isNight() {
       if (currentMode === 'night') return true;
       if (currentMode === 'day') return false;
@@ -97,126 +123,111 @@
 
     const map = new maplibregl.Map({
       container: "map",
-      style: "https://tiles.openfreemap.org/styles/liberty",
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution: "© OpenStreetMap"
+          },
+          lights: {
+            type: "geojson",
+            data: lightsGeoJSON
+          },
+          buildings: {
+            type: "geojson",
+            data: buildingsGeoJSON
+          }
+        },
+        layers: [
+          {
+            id: "base-map",
+            type: "raster",
+            source: "osm",
+            paint: {
+              "raster-brightness-max": 0.25,
+              "raster-contrast": 0.35,
+              "raster-saturation": -0.65
+            }
+          },
+          {
+            id: "buildings-3d",
+            type: "fill-extrusion",
+            source: "buildings",
+            paint: {
+              "fill-extrusion-color": "#f59e0b",
+              "fill-extrusion-height": ["get", "height"],
+              "fill-extrusion-opacity": 0.9
+            }
+          },
+          {
+            id: "lights-glow",
+            type: "circle",
+            source: "lights",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 16, 16, 48],
+              "circle-color": "#fbbf24",
+              "circle-blur": 0.95,
+              "circle-opacity": 0.65
+            }
+          },
+          {
+            id: "lights-core",
+            type: "circle",
+            source: "lights",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 4, 16, 8],
+              "circle-color": "#fef08a",
+              "circle-opacity": 1
+            }
+          }
+        ]
+      },
       center: [44.3661, 33.3152],
-      zoom: 15.2,
-      pitch: 62,
-      bearing: -18
+      zoom: 13.5,
+      pitch: 58,
+      bearing: -15
     });
 
     map.addControl(new maplibregl.NavigationControl());
 
-    function drawPins(night) {
-      pins.forEach(p => p.remove());
-      pins.length = 0;
-      places.forEach(pl => {
+    function renderLabels(night) {
+      markers.forEach(m => m.remove());
+      markers.length = 0;
+      places.forEach(p => {
         const el = document.createElement("div");
-        el.className = night ? "ar-pin" : "ar-pin day";
-        el.innerText = pl.name;
-        pins.push(new maplibregl.Marker({ element: el }).setLngLat([pl.lng, pl.lat]).addTo(map));
+        el.className = night ? "ar-label" : "ar-label day";
+        el.innerText = p.name;
+        markers.push(new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).addTo(map));
       });
     }
 
-    function applyVisuals() {
+    function updateVisuals() {
       const night = isNight();
       document.getElementById("modeBadge").innerText = night
         ? (currentMode === "auto" ? "الوضع الليلي التلقائي مفعّل 🌙" : "الوضع الليلي مفعّل 🌙")
         : (currentMode === "auto" ? "الوضع النهاري التلقائي مفعّل ☀️" : "الوضع النهاري مفعّل ☀️");
 
-      const style = map.getStyle();
-      if (style && Array.isArray(style.layers)) {
-        style.layers.forEach((layer) => {
-          if (!layer || layer.id === "iraq-3d-buildings") return;
-
-          // إخفاء النصوص العربية المقطّعة/المقلوبة من الطبقات المتجهة
-          if (layer.type === "symbol") {
-            try { map.setLayoutProperty(layer.id, "visibility", "none"); } catch (_) {}
-            return;
-          }
-
-          if (layer.type === "background") {
-            try {
-              map.setPaintProperty(layer.id, "background-color", night ? "#050811" : "#e5e7eb");
-            } catch (_) {}
-          }
-
-          if (layer.type === "fill") {
-            try {
-              map.setPaintProperty(layer.id, "fill-color", night ? "#0d1322" : "#d1d5db");
-              map.setPaintProperty(layer.id, "fill-opacity", night ? 0.85 : 0.65);
-            } catch (_) {}
-          }
-
-          // تبليط داكن للشوارع بدل اللون الرصاصي الفاتح
-          if (layer.type === "line") {
-            try {
-              map.setPaintProperty(layer.id, "line-color", night ? "#141820" : "#1f2937");
-              map.setPaintProperty(layer.id, "line-opacity", 0.98);
-            } catch (_) {}
-          }
-        });
+      if (map.getLayer("base-map")) {
+        map.setPaintProperty("base-map", "raster-brightness-max", night ? 0.25 : 0.95);
+        map.setPaintProperty("base-map", "raster-contrast", night ? 0.35 : 0.15);
+        map.setPaintProperty("base-map", "raster-saturation", night ? -0.65 : -0.2);
       }
 
-      try {
-        if (!map.getLayer("iraq-3d-buildings")) {
-          const vecKey = Object.keys(map.getStyle().sources).find(
-            k => map.getStyle().sources[k].type === "vector"
-          );
-          if (vecKey) {
-            map.addLayer({
-              id: "iraq-3d-buildings",
-              source: vecKey,
-              "source-layer": "building",
-              type: "fill-extrusion",
-              minzoom: 13.5,
-              paint: {
-                "fill-extrusion-color": night ? "#f59e0b" : "#94a3b8",
-                "fill-extrusion-height": [
-                  "interpolate", ["linear"], ["zoom"],
-                  13.5, 0,
-                  15, ["coalesce", ["get", "render_height"], ["get", "height"], 15]
-                ],
-                "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], ["get", "min_height"], 0],
-                "fill-extrusion-opacity": night ? 0.9 : 0.85
-              }
-            });
-          }
-        } else {
-          map.setPaintProperty("iraq-3d-buildings", "fill-extrusion-color", night ? "#f59e0b" : "#94a3b8");
-          map.setPaintProperty("iraq-3d-buildings", "fill-extrusion-opacity", night ? 0.9 : 0.85);
-        }
-      } catch (_) {}
+      if (map.getLayer("buildings-3d")) {
+        map.setPaintProperty("buildings-3d", "fill-extrusion-color", night ? "#f59e0b" : "#64748b");
+      }
 
-      try {
-        if (!map.getSource("street-lights")) {
-          map.addSource("street-lights", { type: "geojson", data: lightsGeoJSON });
-        }
-        if (!map.getLayer("street-lights-glow")) {
-          map.addLayer({
-            id: "street-lights-glow",
-            type: "circle",
-            source: "street-lights",
-            paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 18, 16, 52],
-              "circle-color": "#f59e0b",
-              "circle-blur": 0.95,
-              "circle-opacity": night ? 0.65 : 0.05
-            }
-          });
-        } else {
-          map.setPaintProperty("street-lights-glow", "circle-opacity", night ? 0.65 : 0.05);
-        }
-      } catch (_) {}
+      if (map.getLayer("lights-glow")) {
+        map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.65 : 0.05);
+      }
+      if (map.getLayer("lights-core")) {
+        map.setPaintProperty("lights-core", "circle-opacity", night ? 1 : 0.25);
+      }
 
-      try {
-        map.setLight({
-          anchor: "viewport",
-          color: night ? "#fde68a" : "#ffffff",
-          intensity: night ? 0.75 : 0.35
-        });
-      } catch (_) {}
-
-      drawPins(night);
+      renderLabels(night);
     }
 
     function setMode(mode) {
@@ -224,20 +235,20 @@
       document.getElementById("btnAuto").classList.toggle("active", mode === "auto");
       document.getElementById("btnDay").classList.toggle("active", mode === "day");
       document.getElementById("btnNight").classList.toggle("active", mode === "night");
-      applyVisuals();
+      updateVisuals();
     }
 
     function focusPlace(lng, lat) {
-      map.flyTo({ center: [lng, lat], zoom: 15.2, pitch: is3D ? 62 : 0 });
+      map.flyTo({ center: [lng, lat], zoom: 14.5, pitch: is3D ? 58 : 0 });
     }
 
     function toggle3D() {
       is3D = !is3D;
-      map.easeTo({ pitch: is3D ? 62 : 0 });
+      map.easeTo({ pitch: is3D ? 58 : 0 });
     }
 
-    map.on("load", applyVisuals);
-    setTimeout(applyVisuals, 1200);
+    updateVisuals();
+    map.on("load", updateVisuals);
   </script>
 </body>
 </html>
