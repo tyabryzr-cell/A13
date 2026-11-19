@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>خريطة العراق GPS 3D</title>
+  <title>خريطة الملاحة 3D — مجسمات بيوت</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&display=swap" rel="stylesheet" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -17,29 +17,27 @@
 
     .top-panel {
       position: fixed; top: 10px; right: 10px; left: 10px; z-index: 30;
-      background: rgba(10, 15, 28, 0.92); color: #f8fafc;
-      padding: 8px 10px; border-radius: 14px;
-      border: 1px solid rgba(251, 191, 36, 0.4);
+      background: rgba(10, 15, 28, 0.94); color: #f8fafc;
+      padding: 10px 12px; border-radius: 16px;
+      border: 1px solid rgba(251, 191, 36, 0.45);
       backdrop-filter: blur(8px);
-      display: flex; flex-direction: column; gap: 6px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+      display: flex; flex-direction: column; gap: 8px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
       max-width: 440px;
     }
     .top-panel.day-ui {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.96);
       color: #0f172a;
       border-color: rgba(15, 23, 42, 0.18);
     }
 
-    .row {
-      display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
-    }
+    .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
-    button {
+    button, select {
       background: #1e293b; color: #f8fafc;
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 8px; padding: 5px 8px;
-      font-size: 11px; font-weight: 700; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 9px; padding: 6px 10px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
       font-family: 'Cairo', sans-serif;
       white-space: nowrap;
     }
@@ -53,22 +51,23 @@
       border-color: #38bdf8;
     }
 
-    .day-ui button {
+    .day-ui button, .day-ui select {
       background: #e2e8f0; color: #0f172a;
-      border-color: rgba(15, 23, 42, 0.12);
+      border-color: rgba(15, 23, 42, 0.14);
     }
     .day-ui button.active {
       background: #d97706; color: #ffffff; border-color: #d97706;
     }
 
     .gps-trip-bar {
-      position: fixed; bottom: 54px; right: 10px; left: 10px; z-index: 30;
+      position: fixed; bottom: 56px; right: 10px; left: 10px; z-index: 30;
       background: rgba(10, 15, 28, 0.94); color: #f8fafc;
-      border: 1px solid rgba(56, 189, 248, 0.45);
+      border: 1px solid rgba(56, 189, 248, 0.4);
       border-radius: 14px; padding: 8px 10px;
-      display: flex; flex-direction: column; gap: 6px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
       backdrop-filter: blur(8px);
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+      font-size: 12px; font-weight: 700;
     }
     .gps-trip-bar.day-ui {
       background: rgba(255, 255, 255, 0.96);
@@ -76,77 +75,39 @@
       border-color: rgba(15, 23, 42, 0.2);
     }
 
-    .search-row { display: flex; gap: 6px; align-items: center; }
-    .search-input {
-      flex: 1;
-      background: rgba(30, 41, 59, 0.9);
-      color: #ffffff;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 12px; font-weight: 600;
-      font-family: 'Cairo', sans-serif;
-      outline: none;
-    }
-    .day-ui .search-input {
-      background: #f1f5f9;
-      color: #0f172a;
-      border-color: rgba(15, 23, 42, 0.2);
-    }
-
-    .trip-status {
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: 12px; font-weight: 700;
-      color: #38bdf8;
-    }
-    .day-ui .trip-status { color: #0369a1; }
-
     .gov-bar {
       position: fixed; bottom: 8px; right: 10px; left: 10px; z-index: 30;
       background: rgba(10, 15, 28, 0.94);
       border: 1px solid rgba(251, 191, 36, 0.35);
       border-radius: 12px; padding: 6px 8px;
-      display: flex; gap: 5px; overflow-x: auto;
+      display: flex; gap: 6px; overflow-x: auto;
       backdrop-filter: blur(8px);
     }
     .gov-bar.day-ui {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.96);
       border-color: rgba(15, 23, 42, 0.2);
     }
     .gov-btn { flex-shrink: 0; }
 
     .user-puck {
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: #0ea5e9;
-      border: 3px solid #ffffff;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #0ea5e9; border: 3px solid #ffffff;
       box-shadow: 0 0 16px rgba(14, 165, 233, 0.95);
-    }
-
-    .tree-3d-marker {
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #4ade80, #15803d 75%);
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.55);
-      border: 1px solid rgba(220, 252, 231, 0.45);
-      pointer-events: none;
     }
   </style>
 </head>
 <body>
 
   <div class="top-panel" id="topPanel">
-    <div class="row" style="justify-content: space-between;">
-      <span id="modeBadge" style="font-size:12px;font-weight:800;">الوضع الليلي التلقائي 🌙</span>
-      <div class="row">
-        <button id="btnAuto" class="active" onclick="setMode('auto')">تلقائي</button>
-        <button id="btnDay" onclick="setMode('day')">نهاري ☀️</button>
-        <button id="btnNight" onclick="setMode('night')">ليلي 🌙</button>
-      </div>
+    <div id="modeBadge" style="font-size:13px;font-weight:800;">الوضع الليلي التلقائي مفعّل 🌙</div>
+    <div class="row">
+      <button id="btnAuto" class="active" onclick="setMode('auto')">تلقائي</button>
+      <button id="btnDay" onclick="setMode('day')">نهاري ☀️</button>
+      <button id="btnNight" onclick="setMode('night')">ليلي 🌙</button>
+      <button id="btnSat" onclick="toggleSatellite()">قمر صناعي 🛰️</button>
     </div>
     <div class="row">
       <button id="btnGPS" onclick="toggleGPS()">موقعي GPS 📍</button>
-      <button id="btnSat" class="active" onclick="toggleSatellite()">قمر صناعي 🛰️</button>
       <button id="btn3D" class="active" onclick="toggle3D()">مجسمات 3D</button>
       <button onclick="map.zoomIn()">+</button>
       <button onclick="map.zoomOut()">−</button>
@@ -155,14 +116,19 @@
   </div>
 
   <div class="gps-trip-bar" id="gpsBar">
-    <div class="search-row">
-      <input id="placeInput" class="search-input" type="text" placeholder="ابحث عن شارع أو مكان بالعراق أو اضغط على الخريطة..." onkeydown="if(event.key==='Enter') searchDestination()" />
-      <button class="active" onclick="searchDestination()">ذهاب</button>
-      <button onclick="clearTrip()">مسح</button>
+    <div>
+      <div id="tripStatus">موقعك مفعّل • اضغط على الخريطة لرسم مسار</div>
+      <div id="speedStatus" style="color:#38bdf8;">السرعة: 0 كم/س</div>
     </div>
-    <div class="trip-status">
-      <span id="tripDetails">اضغط على الخريطة أو ابحث لرسم مسار رحلة</span>
-      <span id="speedBadge">السرعة: 0 كم/س</span>
+    <div class="row">
+      <select id="quickDest" onchange="goQuickDest()">
+        <option value="">وجهة سريعة...</option>
+        <option value="45.2845,31.3265">كورنيش السماوة</option>
+        <option value="45.2944,31.3320">مركز السماوة</option>
+        <option value="44.4054,33.3267">ساحة التحرير - بغداد</option>
+        <option value="44.3820,33.2850">الجادرية - بغداد</option>
+      </select>
+      <button onclick="clearRoute()">مسح</button>
     </div>
   </div>
 
@@ -176,7 +142,7 @@
     );
 
     const govs = [
-      { id: "muthanna", name: "السماوة (المثنى)", lng: 45.2944, lat: 31.3320, zoom: 16.2 },
+      { id: "muthanna", name: "السماوة (المثنى)", lng: 45.2944, lat: 31.3320, zoom: 16.3 },
       { id: "baghdad", name: "بغداد", lng: 44.3820, lat: 33.2850, zoom: 16.2 },
       { id: "najaf", name: "النجف", lng: 44.3462, lat: 31.9960, zoom: 16.2 },
       { id: "basra", name: "البصرة", lng: 47.7804, lat: 30.5085, zoom: 16.0 },
@@ -198,12 +164,11 @@
 
     let currentMode = 'auto';
     let is3D = true;
-    let isSatellite = true;
+    let isSatellite = false; // مطفأ افتراضياً لتجنب صور القمر الصناعي الضبابية
     let watchId = null;
-    let startPoint = [45.2944, 31.3320];
+    let currentPos = [45.2944, 31.3320];
     let userMarker = null;
     let destMarker = null;
-    const treeMarkers = [];
 
     const govBar = document.getElementById('govBar');
     govs.forEach((g, i) => {
@@ -215,6 +180,50 @@
       govBar.appendChild(b);
     });
 
+    // توليد مجسمات بيوت سكنية حول مركز المنطقة الحالية لتغطية الأحياء غير المرسومة في OSM
+    function createHouseBlocksAround(centerLng, centerLat) {
+      const features = [];
+      let seed = Math.abs(Math.floor((centerLng * 10000) + (centerLat * 10000))) || 777;
+      const rnd = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+
+      const stepLng = 0.00034;
+      const stepLat = 0.00030;
+
+      for (let r = -8; r <= 8; r++) {
+        for (let c = -8; c <= 8; c++) {
+          // ترك ممرات وأزقة بين الكتل
+          if (Math.abs(r) % 3 === 0 || Math.abs(c) % 3 === 0) continue;
+          if (rnd() < 0.18) continue;
+
+          const cx = centerLng + c * stepLng;
+          const cy = centerLat + r * stepLat;
+          const w = stepLng * (0.62 + rnd() * 0.18);
+          const h = stepLat * (0.62 + rnd() * 0.18);
+          const height = Math.floor(6.5 + rnd() * 4.5); // ارتفاع بيت سكني متناسق
+
+          features.push({
+            type: "Feature",
+            properties: { height },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[
+                [cx - w / 2, cy - h / 2],
+                [cx + w / 2, cy - h / 2],
+                [cx + w / 2, cy + h / 2],
+                [cx - w / 2, cy + h / 2],
+                [cx - w / 2, cy - h / 2]
+              ]]
+            }
+          });
+        }
+      }
+
+      return { type: "FeatureCollection", features };
+    }
+
     function isNight() {
       if (currentMode === 'night') return true;
       if (currentMode === 'day') return false;
@@ -225,34 +234,12 @@
     const map = new maplibregl.Map({
       container: "map",
       style: "https://tiles.openfreemap.org/styles/liberty",
-      center: startPoint,
-      zoom: 16.2,
+      center: currentPos,
+      zoom: 16.3,
       pitch: 60,
       bearing: -12,
       antialias: true
     });
-
-    // إضافة مجسمات أشجار خفيفة حول المركز الحالي عند الزوم القريب فوق القمر الصناعي
-    function refreshNearbyTrees(centerLngLat) {
-      treeMarkers.forEach(m => m.remove());
-      treeMarkers.length = 0;
-      if (!is3D || map.getZoom() < 15.8) return;
-
-      const [cx, cy] = centerLngLat;
-      const offsets = [
-        [0.00022, 0.00014], [-0.00024, 0.00018], [0.00019, -0.00021],
-        [-0.00021, -0.00016], [0.00035, 0.00005], [-0.00032, -0.00007]
-      ];
-      offsets.forEach(([dx, dy]) => {
-        const el = document.createElement('div');
-        el.className = 'tree-3d-marker';
-        treeMarkers.push(
-          new maplibregl.Marker({ element: el, pitchAlignment: 'map' })
-            .setLngLat([cx + dx, cy + dy])
-            .addTo(map)
-        );
-      });
-    }
 
     map.on('load', () => {
       map.addSource('esri-sat', {
@@ -275,137 +262,109 @@
         id: 'sat-layer',
         type: 'raster',
         source: 'esri-sat',
-        layout: { visibility: 'visible' },
-        paint: { 'raster-opacity': 0.96 }
+        layout: { visibility: 'none' },
+        paint: { 'raster-opacity': 0.95 }
       }, firstSymbolId);
 
       if (map.getLayer('building')) map.setLayoutProperty('building', 'visibility', 'none');
       if (map.getLayer('building-3d')) map.removeLayer('building-3d');
 
-      // مجسمات المباني 3D شبه شفافة لتبرز فوق صور القمر الصناعي
+      // مجسمات بيوت المنطقة الحالية
+      map.addSource('area-houses', {
+        type: 'geojson',
+        data: createHouseBlocksAround(currentPos[0], currentPos[1])
+      });
+
       map.addLayer({
-        id: 'iraq-buildings-3d',
-        source: 'openmaptiles',
-        'source-layer': 'building',
+        id: 'area-houses-3d',
+        source: 'area-houses',
         type: 'fill-extrusion',
-        minzoom: 13.8,
+        minzoom: 14.2,
         paint: {
-          'fill-extrusion-color': '#cbd5e1',
-          'fill-extrusion-height': [
-            'interpolate', ['linear'], ['zoom'],
-            13.8, 0,
-            14.6, ['min', 60, ['*', ['coalesce', ['get', 'render_height'], 12], 1.25]]
-          ],
-          'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-          'fill-extrusion-opacity': 0.76
+          'fill-extrusion-color': '#334155',
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 0.92
         }
       }, firstSymbolId);
 
-      map.addSource('trip-route', {
+      // مباني OSM الحقيقية
+      map.addLayer({
+        id: 'osm-buildings-3d',
+        source: 'openmaptiles',
+        'source-layer': 'building',
+        type: 'fill-extrusion',
+        minzoom: 14.0,
+        paint: {
+          'fill-extrusion-color': '#475569',
+          'fill-extrusion-height': [
+            'interpolate', ['linear'], ['zoom'],
+            14.0, 0,
+            14.8, ['min', 45, ['*', ['coalesce', ['get', 'render_height'], 10], 1.15]]
+          ],
+          'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+          'fill-extrusion-opacity': 0.95
+        }
+      }, firstSymbolId);
+
+      // مسار الرحلة الحقيقي (OSRM)
+      map.addSource('route-src', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] }
       });
 
       map.addLayer({
-        id: 'trip-route-casing',
+        id: 'route-line',
         type: 'line',
-        source: 'trip-route',
+        source: 'route-src',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#0369a1', 'line-width': 10, 'line-opacity': 0.85 }
+        paint: { 'line-color': '#38bdf8', 'line-width': 6, 'line-opacity': 0.95 }
       }, firstSymbolId);
 
-      map.addLayer({
-        id: 'trip-route-line',
-        type: 'line',
-        source: 'trip-route',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#38bdf8', 'line-width': 5.5, 'line-opacity': 0.98 }
-      }, firstSymbolId);
-
-      refreshNearbyTrees(startPoint);
       updateTheme();
     });
 
-    map.on('moveend', () => {
-      const c = map.getCenter();
-      refreshNearbyTrees([c.lng, c.lat]);
-    });
-
-    async function buildTripRoute(destLng, destLat, labelName = "الوجهة المحددة") {
-      document.getElementById('tripDetails').innerText = 'جاري حساب مسار الرحلة...';
+    async function drawRouteTo(destLng, destLat, label = "الوجهة") {
+      document.getElementById('tripStatus').innerText = 'جاري حساب المسار...';
       try {
-        const url = `https://router.project-osrm.org/route/v1/driving/${startPoint[0]},${startPoint[1]};${destLng},${destLat}?overview=full&geometries=geojson`;
+        const url = `https://router.project-osrm.org/route/v1/driving/${currentPos[0]},${currentPos[1]};${destLng},${destLat}?overview=full&geometries=geojson`;
         const res = await fetch(url);
         const data = await res.json();
-
         if (!data.routes || !data.routes.length) {
-          document.getElementById('tripDetails').innerText = 'تعذر رسم مسار لهذه النقطة';
+          document.getElementById('tripStatus').innerText = 'تعذر إيجاد مسار';
           return;
         }
-
-        const route = data.routes[0];
-        map.getSource('trip-route').setData({
-          type: 'Feature',
-          geometry: route.geometry
-        });
-
+        const r = data.routes[0];
+        map.getSource('route-src').setData({ type: 'Feature', geometry: r.geometry });
         if (destMarker) destMarker.remove();
-        destMarker = new maplibregl.Marker({ color: '#ef4444' })
-          .setLngLat([destLng, destLat])
-          .addTo(map);
-
-        const km = (route.distance / 1000).toFixed(1);
-        const mins = Math.max(1, Math.round(route.duration / 60));
-        document.getElementById('tripDetails').innerText = `${labelName}: ${km} كم • ${mins} دقيقة`;
-
-        map.flyTo({
-          center: [destLng, destLat],
-          zoom: 15.5,
-          pitch: is3D ? 60 : 0,
-          duration: 900
-        });
-      } catch (err) {
-        document.getElementById('tripDetails').innerText = 'تعذر الاتصال بخدمة المسارات';
-      }
-    }
-
-    async function searchDestination() {
-      const q = document.getElementById('placeInput').value.trim();
-      if (!q) return;
-      document.getElementById('tripDetails').innerText = `جاري البحث عن "${q}"...`;
-
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=iq&limit=1&q=${encodeURIComponent(q)}`;
-        const res = await fetch(url);
-        const list = await res.json();
-
-        if (!list || !list.length) {
-          document.getElementById('tripDetails').innerText = 'لم يتم العثور على المكان، جرّب اسماً أوضح';
-          return;
-        }
-
-        const place = list[0];
-        buildTripRoute(parseFloat(place.lon), parseFloat(place.lat), q);
+        destMarker = new maplibregl.Marker({ color: '#ef4444' }).setLngLat([destLng, destLat]).addTo(map);
+        const km = (r.distance / 1000).toFixed(1);
+        const mins = Math.max(1, Math.round(r.duration / 60));
+        document.getElementById('tripStatus').innerText = `${label}: ${km} كم • ${mins} دقيقة`;
       } catch (e) {
-        document.getElementById('tripDetails').innerText = 'خطأ أثناء البحث عن المكان';
+        document.getElementById('tripStatus').innerText = 'خطأ في جلب المسار';
       }
     }
 
-    function clearTrip() {
-      document.getElementById('placeInput').value = '';
-      if (map.getSource('trip-route')) {
-        map.getSource('trip-route').setData({ type: 'FeatureCollection', features: [] });
+    function goQuickDest() {
+      const v = document.getElementById('quickDest').value;
+      if (!v) return;
+      const [lng, lat] = v.split(',').map(Number);
+      drawRouteTo(lng, lat, 'وجهة سريعة');
+    }
+
+    function clearRoute() {
+      document.getElementById('quickDest').value = '';
+      if (map.getSource('route-src')) {
+        map.getSource('route-src').setData({ type: 'FeatureCollection', features: [] });
       }
-      if (destMarker) {
-        destMarker.remove();
-        destMarker = null;
-      }
-      document.getElementById('tripDetails').innerText = 'اضغط على الخريطة أو ابحث لرسم مسار رحلة';
+      if (destMarker) { destMarker.remove(); destMarker = null; }
+      document.getElementById('tripStatus').innerText = 'اضغط على الخريطة لرسم مسار';
     }
 
     map.on('click', (e) => {
-      if (e.originalEvent.target.closest('button, input, .top-panel, .gps-trip-bar, .gov-bar')) return;
-      buildTripRoute(e.lngLat.lng, e.lngLat.lat, 'نقطة مختارة');
+      if (e.originalEvent.target.closest('button, select, .top-panel, .gps-trip-bar, .gov-bar')) return;
+      drawRouteTo(e.lngLat.lng, e.lngLat.lat, 'نقطة مختارة');
     });
 
     function toggleGPS() {
@@ -414,41 +373,40 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
         btn.classList.remove('gps-active');
-        document.getElementById('speedBadge').innerText = 'GPS متوقف';
+        document.getElementById('speedStatus').innerText = 'GPS متوقف';
         return;
       }
-
       if (!navigator.geolocation) {
-        alert('جهازك أو المتصفح لا يدعم GPS');
+        alert('المتصفح لا يدعم GPS');
         return;
       }
-
       btn.classList.add('gps-active');
-      document.getElementById('tripDetails').innerText = 'جاري تحديد موقعك عبر الأقمار الصناعية...';
-
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const { latitude, longitude, speed } = pos.coords;
-          startPoint = [longitude, latitude];
+          currentPos = [longitude, latitude];
+
+          if (map.getSource('area-houses')) {
+            map.getSource('area-houses').setData(createHouseBlocksAround(longitude, latitude));
+          }
 
           if (!userMarker) {
             const el = document.createElement('div');
             el.className = 'user-puck';
-            userMarker = new maplibregl.Marker({ element: el }).setLngLat(startPoint).addTo(map);
+            userMarker = new maplibregl.Marker({ element: el }).setLngLat(currentPos).addTo(map);
           } else {
-            userMarker.setLngLat(startPoint);
+            userMarker.setLngLat(currentPos);
           }
 
-          map.flyTo({ center: startPoint, zoom: 16.4, pitch: is3D ? 60 : 0, duration: 700 });
-
+          map.flyTo({ center: currentPos, zoom: 16.4, pitch: is3D ? 60 : 0, duration: 700 });
           const kmh = (typeof speed === 'number' && !isNaN(speed) && speed >= 0) ? Math.round(speed * 3.6) : 0;
-          document.getElementById('speedBadge').innerText = `السرعة: ${kmh} كم/س`;
-          document.getElementById('tripDetails').innerText = 'تم تحديد موقعك الحالي ✓';
+          document.getElementById('speedStatus').innerText = `السرعة: ${kmh} كم/س`;
+          document.getElementById('tripStatus').innerText = 'موقعك مفعّل • اضغط على الخريطة لرسم مسار';
         },
         () => {
           watchId = null;
           btn.classList.remove('gps-active');
-          document.getElementById('tripDetails').innerText = 'يرجى السماح بصلاحية الموقع (GPS) في المتصفح';
+          document.getElementById('tripStatus').innerText = 'تأكد من تفعيل صلاحية الموقع في المتصفح';
         },
         { enableHighAccuracy: true, maximumAge: 1000 }
       );
@@ -457,8 +415,8 @@
     function updateTheme() {
       const night = isNight();
       document.getElementById('modeBadge').innerText = night
-        ? (currentMode === 'auto' ? 'الوضع الليلي التلقائي 🌙' : 'الوضع الليلي 🌙')
-        : (currentMode === 'auto' ? 'الوضع النهاري التلقائي ☀️' : 'الوضع النهاري ☀️');
+        ? (currentMode === 'auto' ? 'الوضع الليلي التلقائي مفعّل 🌙' : 'الوضع الليلي مفعّل 🌙')
+        : (currentMode === 'auto' ? 'الوضع النهاري التلقائي مفعّل ☀️' : 'الوضع النهاري مفعّل ☀️');
 
       ['topPanel', 'gpsBar', 'govBar'].forEach(id => {
         document.getElementById(id).classList.toggle('day-ui', !night);
@@ -466,30 +424,42 @@
 
       map.setLight({
         anchor: 'viewport',
-        color: night ? '#fde68a' : '#ffffff',
-        intensity: night ? 0.55 : 0.85,
-        position: [1.5, 180, 50]
+        color: night ? '#e2e8f0' : '#ffffff',
+        intensity: night ? 0.55 : 0.82,
+        position: [1.5, 180, 48]
       });
 
       if (map.getLayer('sat-layer')) {
         map.setLayoutProperty('sat-layer', 'visibility', isSatellite ? 'visible' : 'none');
-        map.setPaintProperty('sat-layer', 'raster-brightness-max', night ? 0.55 : 1.0);
-        map.setPaintProperty('sat-layer', 'raster-contrast', night ? 0.22 : 0.05);
       }
 
-      if (map.getLayer('iraq-buildings-3d')) {
-        map.setPaintProperty('iraq-buildings-3d', 'fill-extrusion-color', night
+      (map.getStyle()?.layers || []).forEach(l => {
+        if (['sat-layer', 'area-houses-3d', 'osm-buildings-3d', 'route-line'].includes(l.id)) return;
+        if (l.type === 'background') {
+          map.setPaintProperty(l.id, 'background-color', night ? '#090f1d' : '#e2e8f0');
+        }
+        if (l.type === 'line' && l.id.includes('road')) {
+          map.setPaintProperty(l.id, 'line-color', night ? '#26364d' : '#94a3b8');
+        }
+      });
+
+      if (map.getLayer('area-houses-3d')) {
+        map.setPaintProperty('area-houses-3d', 'fill-extrusion-color', night ? '#334155' : '#cbd5e1');
+      }
+
+      if (map.getLayer('osm-buildings-3d')) {
+        map.setPaintProperty('osm-buildings-3d', 'fill-extrusion-color', night
           ? [
-              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 12],
-              0, '#334155',
-              16, '#64748b',
-              32, '#f59e0b'
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
+              0, '#1e293b',
+              15, '#334155',
+              30, '#475569'
             ]
           : [
-              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 12],
-              0, '#f1f5f9',
-              16, '#cbd5e1',
-              32, '#94a3b8'
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
+              0, '#e2e8f0',
+              15, '#cbd5e1',
+              30, '#94a3b8'
             ]
         );
       }
@@ -514,17 +484,18 @@
       is3D = !is3D;
       document.getElementById('btn3D').classList.toggle('active', is3D);
       map.easeTo({ pitch: is3D ? 60 : 0, duration: 500 });
-      if (map.getLayer('iraq-buildings-3d')) {
-        map.setLayoutProperty('iraq-buildings-3d', 'visibility', is3D ? 'visible' : 'none');
-      }
-      const c = map.getCenter();
-      refreshNearbyTrees([c.lng, c.lat]);
+      ['area-houses-3d', 'osm-buildings-3d'].forEach(id => {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', is3D ? 'visible' : 'none');
+      });
     }
 
     function focusGov(id) {
       const g = govs.find(x => x.id === id);
       if (!g) return;
-      if (watchId === null) startPoint = [g.lng, g.lat];
+      if (watchId === null) currentPos = [g.lng, g.lat];
+      if (map.getSource('area-houses')) {
+        map.getSource('area-houses').setData(createHouseBlocksAround(g.lng, g.lat));
+      }
       document.querySelectorAll('.gov-btn').forEach(b => b.classList.remove('active'));
       const el = document.getElementById('gbtn-' + id);
       if (el) el.classList.add('active');
