@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>خريطة العراق 3D</title>
+  <title>خريطة العراق 3D - مباني واقعية</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&display=swap" rel="stylesheet" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -11,7 +11,7 @@
     * { box-sizing: border-box; }
     body, html, #map {
       margin: 0; padding: 0; width: 100%; height: 100%;
-      background: #0b1120; font-family: 'Cairo', sans-serif;
+      background: #050811; font-family: 'Cairo', sans-serif;
     }
     .panel {
       position: fixed; top: 12px; right: 12px; z-index: 20;
@@ -47,7 +47,7 @@
 </head>
 <body>
   <div class="panel">
-    <div id="modeBadge">جاري تشغيل الخريطة...</div>
+    <div id="modeBadge">الوضع الليلي التلقائي مفعّل 🌙</div>
     <div class="btn-row">
       <button id="btnAuto" class="active" onclick="setMode('auto')">تلقائي</button>
       <button id="btnDay" onclick="setMode('day')">نهاري ☀️</button>
@@ -88,32 +88,6 @@
       ]
     };
 
-    const buildingsGeoJSON = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          properties: { height: 70 },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[
-              [44.3645, 33.3142], [44.3665, 33.3142], [44.3665, 33.3158], [44.3645, 33.3158], [44.3645, 33.3142]
-            ]]
-          }
-        },
-        {
-          type: "Feature",
-          properties: { height: 55 },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[
-              [45.2930, 31.3310], [45.2952, 31.3310], [45.2952, 31.3328], [45.2930, 31.3328], [45.2930, 31.3310]
-            ]]
-          }
-        }
-      ]
-    };
-
     function isNight() {
       if (currentMode === 'night') return true;
       if (currentMode === 'day') return false;
@@ -132,13 +106,13 @@
             tileSize: 256,
             attribution: "© OpenStreetMap"
           },
+          ofmBuildings: {
+            type: "vector",
+            url: "https://tiles.openfreemap.org/planet"
+          },
           lights: {
             type: "geojson",
             data: lightsGeoJSON
-          },
-          buildings: {
-            type: "geojson",
-            data: buildingsGeoJSON
           }
         },
         layers: [
@@ -153,13 +127,27 @@
             }
           },
           {
-            id: "buildings-3d",
+            id: "real-buildings-3d",
+            source: "ofmBuildings",
+            "source-layer": "building",
             type: "fill-extrusion",
-            source: "buildings",
+            minzoom: 14,
             paint: {
-              "fill-extrusion-color": "#f59e0b",
-              "fill-extrusion-height": ["get", "height"],
-              "fill-extrusion-opacity": 0.9
+              "fill-extrusion-color": [
+                "interpolate",
+                ["linear"],
+                ["coalesce", ["get", "render_height"], ["get", "height"], 12],
+                5, "#334155",
+                20, "#475569",
+                50, "#d97706"
+              ],
+              "fill-extrusion-height": [
+                "interpolate", ["linear"], ["zoom"],
+                14, 0,
+                15.5, ["coalesce", ["get", "render_height"], ["get", "height"], 14]
+              ],
+              "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], ["get", "min_height"], 0],
+              "fill-extrusion-opacity": 0.88
             }
           },
           {
@@ -186,8 +174,8 @@
         ]
       },
       center: [44.3661, 33.3152],
-      zoom: 13.5,
-      pitch: 58,
+      zoom: 15,
+      pitch: 60,
       bearing: -15
     });
 
@@ -210,22 +198,46 @@
         ? (currentMode === "auto" ? "الوضع الليلي التلقائي مفعّل 🌙" : "الوضع الليلي مفعّل 🌙")
         : (currentMode === "auto" ? "الوضع النهاري التلقائي مفعّل ☀️" : "الوضع النهاري مفعّل ☀️");
 
-      if (map.getLayer("base-map")) {
-        map.setPaintProperty("base-map", "raster-brightness-max", night ? 0.25 : 0.95);
-        map.setPaintProperty("base-map", "raster-contrast", night ? 0.35 : 0.15);
-        map.setPaintProperty("base-map", "raster-saturation", night ? -0.65 : -0.2);
-      }
+      try {
+        if (map.getLayer("base-map")) {
+          map.setPaintProperty("base-map", "raster-brightness-max", night ? 0.25 : 0.95);
+          map.setPaintProperty("base-map", "raster-contrast", night ? 0.35 : 0.15);
+          map.setPaintProperty("base-map", "raster-saturation", night ? -0.65 : -0.2);
+        }
 
-      if (map.getLayer("buildings-3d")) {
-        map.setPaintProperty("buildings-3d", "fill-extrusion-color", night ? "#f59e0b" : "#64748b");
-      }
+        if (map.getLayer("real-buildings-3d")) {
+          map.setPaintProperty("real-buildings-3d", "fill-extrusion-color", night
+            ? [
+                "interpolate", ["linear"],
+                ["coalesce", ["get", "render_height"], ["get", "height"], 12],
+                5, "#1e293b",
+                20, "#334155",
+                50, "#f59e0b"
+              ]
+            : [
+                "interpolate", ["linear"],
+                ["coalesce", ["get", "render_height"], ["get", "height"], 12],
+                5, "#cbd5e1",
+                20, "#94a3b8",
+                50, "#64748b"
+              ]
+          );
+          map.setPaintProperty("real-buildings-3d", "fill-extrusion-opacity", night ? 0.9 : 0.85);
+        }
 
-      if (map.getLayer("lights-glow")) {
-        map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.65 : 0.05);
-      }
-      if (map.getLayer("lights-core")) {
-        map.setPaintProperty("lights-core", "circle-opacity", night ? 1 : 0.25);
-      }
+        if (map.getLayer("lights-glow")) {
+          map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.65 : 0.05);
+        }
+        if (map.getLayer("lights-core")) {
+          map.setPaintProperty("lights-core", "circle-opacity", night ? 1 : 0.25);
+        }
+
+        map.setLight({
+          anchor: "viewport",
+          color: night ? "#fde68a" : "#ffffff",
+          intensity: night ? 0.75 : 0.35
+        });
+      } catch (_) {}
 
       renderLabels(night);
     }
@@ -239,12 +251,12 @@
     }
 
     function focusPlace(lng, lat) {
-      map.flyTo({ center: [lng, lat], zoom: 14.5, pitch: is3D ? 58 : 0 });
+      map.flyTo({ center: [lng, lat], zoom: 15.2, pitch: is3D ? 60 : 0 });
     }
 
     function toggle3D() {
       is3D = !is3D;
-      map.easeTo({ pitch: is3D ? 58 : 0 });
+      map.easeTo({ pitch: is3D ? 60 : 0 });
     }
 
     updateVisuals();
