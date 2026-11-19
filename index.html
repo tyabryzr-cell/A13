@@ -8,26 +8,90 @@
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <style>
     body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; }
-    .badge {
+    .panel {
       position: fixed; top: 12px; right: 12px; z-index: 10;
-      background: rgba(15, 23, 42, 0.88); color: #fff;
-      padding: 8px 14px; border-radius: 10px; font-family: sans-serif; font-size: 13px;
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(15, 23, 42, 0.9); color: #fff;
+      padding: 10px 14px; border-radius: 12px; font-family: sans-serif; font-size: 13px;
+      border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: 8px;
     }
+    .btn-row { display: flex; gap: 6px; }
+    button {
+      background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer;
+    }
+    button.active { background: #f59e0b; color: #0f172a; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="badge" id="modeBadge">جاري تحميل الخريطة...</div>
+  <div class="panel">
+    <div id="modeBadge">جاري تحميل الخريطة...</div>
+    <div class="btn-row">
+      <button id="btnAuto" class="active" onclick="setMode('auto')">تلقائي</button>
+      <button id="btnDay" onclick="setMode('day')">نهاري ☀️</button>
+      <button id="btnNight" onclick="setMode('night')">ليلي 🌙</button>
+    </div>
+  </div>
   <div id="map"></div>
 
   <script>
-    const hour = new Date().getHours();
-    const isNight = hour >= 18 || hour < 6;
-    document.getElementById("modeBadge").innerText = isNight
-      ? "الوضع الليلي التلقائي مفعّل 🌙"
-      : "الوضع النهاري مفعّل ☀️";
+    let currentMode = 'auto';
 
-    const roadUrl = "./istockphoto-1042084638-612x612%20(1).jpg";
+    function computeIsNight() {
+      if (currentMode === 'night') return true;
+      if (currentMode === 'day') return false;
+      const hour = new Date().getHours();
+      return hour >= 18 || hour < 6;
+    }
+
+    // نقاط إنارة شوارع وتقاطعات في بغداد كبداية قابلة للتوسع لباقي المحافظات
+    const streetLightsGeoJSON = {
+      type: "FeatureCollection",
+      features: [
+        { type: "Feature", properties: { name: "ساحة التحرير" }, geometry: { type: "Point", coordinates: [44.4054, 33.3267] } },
+        { type: "Feature", properties: { name: "الكرادة" }, geometry: { type: "Point", coordinates: [44.4265, 33.3075] } },
+        { type: "Feature", properties: { name: "المنصور" }, geometry: { type: "Point", coordinates: [44.3462, 33.3128] } },
+        { type: "Feature", properties: { name: "الجادرية" }, geometry: { type: "Point", coordinates: [44.3820, 33.2850] } },
+        { type: "Feature", properties: { name: "الرصافي" }, geometry: { type: "Point", coordinates: [44.4150, 33.3450] } },
+        { type: "Feature", properties: { name: "الكرخ" }, geometry: { type: "Point", coordinates: [44.3550, 33.3380] } }
+      ]
+    };
+
+    // مباني 3D مع ارتفاعات وتأثير إضاءة نوافذ ليلاً
+    const buildings3DGeoJSON = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { height: 65, base: 0 },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [44.4035, 33.3255], [44.4050, 33.3255], [44.4050, 33.3268], [44.4035, 33.3268], [44.4035, 33.3255]
+            ]]
+          }
+        },
+        {
+          type: "Feature",
+          properties: { height: 85, base: 0 },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [44.3450, 33.3118], [44.3470, 33.3118], [44.3470, 33.3133], [44.3450, 33.3133], [44.3450, 33.3118]
+            ]]
+          }
+        },
+        {
+          type: "Feature",
+          properties: { height: 50, base: 0 },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [44.4250, 33.3065], [44.4270, 33.3065], [44.4270, 33.3080], [44.4250, 33.3080], [44.4250, 33.3065]
+            ]]
+          }
+        }
+      ]
+    };
 
     const map = new maplibregl.Map({
       container: "map",
@@ -40,15 +104,13 @@
             tileSize: 256,
             attribution: "© OpenStreetMap"
           },
-          roadTex: {
-            type: "image",
-            url: roadUrl,
-            coordinates: [
-              [44.30, 33.25],
-              [44.50, 33.25],
-              [44.50, 33.38],
-              [44.30, 33.38]
-            ]
+          streetLights: {
+            type: "geojson",
+            data: streetLightsGeoJSON
+          },
+          buildings3d: {
+            type: "geojson",
+            data: buildings3DGeoJSON
           }
         },
         layers: [
@@ -57,28 +119,83 @@
             type: "raster",
             source: "osm",
             paint: {
-              "raster-brightness-max": isNight ? 0.30 : 1.0,
-              "raster-contrast": isNight ? 0.25 : 0.05,
-              "raster-saturation": isNight ? -0.45 : 0.1
+              "raster-brightness-max": 0.30,
+              "raster-contrast": 0.25,
+              "raster-saturation": -0.45
             }
           },
           {
-            id: "road-texture-layer",
-            type: "raster",
-            source: "roadTex",
+            id: "buildings-3d-layer",
+            type: "fill-extrusion",
+            source: "buildings3d",
             paint: {
-              "raster-opacity": 0.85
+              "fill-extrusion-color": "#fbbf24",
+              "fill-extrusion-height": ["get", "height"],
+              "fill-extrusion-base": ["get", "base"],
+              "fill-extrusion-opacity": 0.92
+            }
+          },
+          {
+            id: "street-lights-glow",
+            type: "circle",
+            source: "streetLights",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 10, 15, 32],
+              "circle-color": "#fbbf24",
+              "circle-opacity": 0.45,
+              "circle-blur": 0.9
+            }
+          },
+          {
+            id: "street-lights-core",
+            type: "circle",
+            source: "streetLights",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 15, 7],
+              "circle-color": "#fef08a",
+              "circle-opacity": 0.95
             }
           }
         ]
       },
-      center: [44.3661, 33.3152],
-      zoom: 12,
-      pitch: 55,
+      center: [44.3820, 33.3152],
+      zoom: 12.5,
+      pitch: 60,
       bearing: -15
     });
 
     map.addControl(new maplibregl.NavigationControl());
+
+    function applyVisualMode() {
+      const night = computeIsNight();
+      document.getElementById("modeBadge").innerText = night
+        ? (currentMode === "auto" ? "الوضع الليلي التلقائي مفعّل 🌙" : "الوضع الليلي مفعّل 🌙")
+        : (currentMode === "auto" ? "الوضع النهاري التلقائي مفعّل ☀️" : "الوضع النهاري مفعّل ☀️");
+
+      if (!map.getLayer("osm-layer")) return;
+
+      map.setPaintProperty("osm-layer", "raster-brightness-max", night ? 0.28 : 1.0);
+      map.setPaintProperty("osm-layer", "raster-contrast", night ? 0.28 : 0.05);
+      map.setPaintProperty("osm-layer", "raster-saturation", night ? -0.45 : 0.1);
+
+      // إنارة المباني ليلاً وواجهة حجرية/رمادية نهاراً
+      map.setPaintProperty("buildings-3d-layer", "fill-extrusion-color", night ? "#f59e0b" : "#cbd5e1");
+      map.setPaintProperty("buildings-3d-layer", "fill-extrusion-opacity", night ? 0.92 : 0.85);
+
+      // توهج إنارة الشوارع يظهر بقوة ليلاً ويخف نهاراً
+      map.setPaintProperty("street-lights-glow", "circle-opacity", night ? 0.5 : 0.08);
+      map.setPaintProperty("street-lights-core", "circle-opacity", night ? 0.95 : 0.35);
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById("btnAuto").classList.toggle("active", mode === "auto");
+      document.getElementById("btnDay").classList.toggle("active", mode === "day");
+      document.getElementById("btnNight").classList.toggle("active", mode === "night");
+      applyVisualMode();
+    }
+
+    map.on("load", applyVisualMode);
   </script>
 </body>
 </html>
