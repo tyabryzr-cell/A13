@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>خريطة العراق 3D - مباني واقعية</title>
+  <title>خريطة العراق 3D</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&display=swap" rel="stylesheet" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -54,7 +54,7 @@
       <button id="btnNight" onclick="setMode('night')">ليلي 🌙</button>
     </div>
     <div class="btn-row">
-      <button onclick="focusPlace(44.3661, 33.3152)">بغداد</button>
+      <button onclick="focusPlace(44.3820, 33.2850)">بغداد</button>
       <button onclick="focusPlace(45.2944, 31.3320)">السماوة</button>
       <button onclick="toggle3D()">زاوية 3D</button>
     </div>
@@ -67,10 +67,10 @@
     const markers = [];
 
     const places = [
+      { name: "الجادرية", lng: 44.3820, lat: 33.2850 },
       { name: "بغداد - ساحة التحرير", lng: 44.4054, lat: 33.3267 },
       { name: "الكرادة", lng: 44.4265, lat: 33.3075 },
       { name: "المنصور", lng: 44.3462, lat: 33.3128 },
-      { name: "الجادرية", lng: 44.3820, lat: 33.2850 },
       { name: "السماوة - مركز المدينة", lng: 45.2944, lat: 31.3320 },
       { name: "كورنيش السماوة", lng: 45.2845, lat: 31.3265 }
     ];
@@ -78,13 +78,70 @@
     const lightsGeoJSON = {
       type: "FeatureCollection",
       features: [
+        { type: "Feature", geometry: { type: "Point", coordinates: [44.3820, 33.2850] } },
         { type: "Feature", geometry: { type: "Point", coordinates: [44.4054, 33.3267] } },
         { type: "Feature", geometry: { type: "Point", coordinates: [44.4265, 33.3075] } },
         { type: "Feature", geometry: { type: "Point", coordinates: [44.3462, 33.3128] } },
-        { type: "Feature", geometry: { type: "Point", coordinates: [44.3820, 33.2850] } },
         { type: "Feature", geometry: { type: "Point", coordinates: [44.3661, 33.3152] } },
         { type: "Feature", geometry: { type: "Point", coordinates: [45.2944, 31.3320] } },
         { type: "Feature", geometry: { type: "Point", coordinates: [45.2845, 31.3265] } }
+      ]
+    };
+
+    // مجمعات ومبانٍ 3D بارتفاعات متنوعة حول الجادرية وبغداد والسماوة
+    const buildingsGeoJSON = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { height: 65, tier: "tall" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [44.3805, 33.2842], [44.3822, 33.2842], [44.3822, 33.2856], [44.3805, 33.2856], [44.3805, 33.2842]
+            ]]
+          }
+        },
+        {
+          type: "Feature",
+          properties: { height: 42, tier: "mid" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [44.3832, 33.2846], [44.3848, 33.2846], [44.3848, 33.2859], [44.3832, 33.2859], [44.3832, 33.2846]
+            ]]
+          }
+        },
+        {
+          type: "Feature",
+          properties: { height: 28, tier: "low" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [44.3810, 33.2862], [44.3830, 33.2862], [44.3830, 33.2873], [44.3810, 33.2873], [44.3810, 33.2862]
+            ]]
+          }
+        },
+        {
+          type: "Feature",
+          properties: { height: 75, tier: "tall" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [44.4045, 33.3260], [44.4063, 33.3260], [44.4063, 33.3274], [44.4045, 33.3274], [44.4045, 33.3260]
+            ]]
+          }
+        },
+        {
+          type: "Feature",
+          properties: { height: 52, tier: "mid" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [45.2932, 31.3312], [45.2952, 31.3312], [45.2952, 31.3327], [45.2932, 31.3327], [45.2932, 31.3312]
+            ]]
+          }
+        }
       ]
     };
 
@@ -106,13 +163,13 @@
             tileSize: 256,
             attribution: "© OpenStreetMap"
           },
-          ofmBuildings: {
-            type: "vector",
-            url: "https://tiles.openfreemap.org/planet"
-          },
           lights: {
             type: "geojson",
             data: lightsGeoJSON
+          },
+          buildings: {
+            type: "geojson",
+            data: buildingsGeoJSON
           }
         },
         layers: [
@@ -127,27 +184,13 @@
             }
           },
           {
-            id: "real-buildings-3d",
-            source: "ofmBuildings",
-            "source-layer": "building",
+            id: "buildings-3d",
             type: "fill-extrusion",
-            minzoom: 14,
+            source: "buildings",
             paint: {
-              "fill-extrusion-color": [
-                "interpolate",
-                ["linear"],
-                ["coalesce", ["get", "render_height"], ["get", "height"], 12],
-                5, "#334155",
-                20, "#475569",
-                50, "#d97706"
-              ],
-              "fill-extrusion-height": [
-                "interpolate", ["linear"], ["zoom"],
-                14, 0,
-                15.5, ["coalesce", ["get", "render_height"], ["get", "height"], 14]
-              ],
-              "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], ["get", "min_height"], 0],
-              "fill-extrusion-opacity": 0.88
+              "fill-extrusion-color": "#f59e0b",
+              "fill-extrusion-height": ["get", "height"],
+              "fill-extrusion-opacity": 0.92
             }
           },
           {
@@ -173,8 +216,8 @@
           }
         ]
       },
-      center: [44.3661, 33.3152],
-      zoom: 15,
+      center: [44.3820, 33.2850],
+      zoom: 15.2,
       pitch: 60,
       bearing: -15
     });
@@ -198,46 +241,25 @@
         ? (currentMode === "auto" ? "الوضع الليلي التلقائي مفعّل 🌙" : "الوضع الليلي مفعّل 🌙")
         : (currentMode === "auto" ? "الوضع النهاري التلقائي مفعّل ☀️" : "الوضع النهاري مفعّل ☀️");
 
-      try {
-        if (map.getLayer("base-map")) {
-          map.setPaintProperty("base-map", "raster-brightness-max", night ? 0.25 : 0.95);
-          map.setPaintProperty("base-map", "raster-contrast", night ? 0.35 : 0.15);
-          map.setPaintProperty("base-map", "raster-saturation", night ? -0.65 : -0.2);
-        }
+      if (map.getLayer("base-map")) {
+        map.setPaintProperty("base-map", "raster-brightness-max", night ? 0.25 : 0.95);
+        map.setPaintProperty("base-map", "raster-contrast", night ? 0.35 : 0.15);
+        map.setPaintProperty("base-map", "raster-saturation", night ? -0.65 : -0.2);
+      }
 
-        if (map.getLayer("real-buildings-3d")) {
-          map.setPaintProperty("real-buildings-3d", "fill-extrusion-color", night
-            ? [
-                "interpolate", ["linear"],
-                ["coalesce", ["get", "render_height"], ["get", "height"], 12],
-                5, "#1e293b",
-                20, "#334155",
-                50, "#f59e0b"
-              ]
-            : [
-                "interpolate", ["linear"],
-                ["coalesce", ["get", "render_height"], ["get", "height"], 12],
-                5, "#cbd5e1",
-                20, "#94a3b8",
-                50, "#64748b"
-              ]
-          );
-          map.setPaintProperty("real-buildings-3d", "fill-extrusion-opacity", night ? 0.9 : 0.85);
-        }
+      if (map.getLayer("buildings-3d")) {
+        map.setPaintProperty("buildings-3d", "fill-extrusion-color", night
+          ? ["match", ["get", "tier"], "tall", "#f59e0b", "mid", "#d97706", "#b45309"]
+          : ["match", ["get", "tier"], "tall", "#475569", "mid", "#64748b", "#94a3b8"]
+        );
+      }
 
-        if (map.getLayer("lights-glow")) {
-          map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.65 : 0.05);
-        }
-        if (map.getLayer("lights-core")) {
-          map.setPaintProperty("lights-core", "circle-opacity", night ? 1 : 0.25);
-        }
-
-        map.setLight({
-          anchor: "viewport",
-          color: night ? "#fde68a" : "#ffffff",
-          intensity: night ? 0.75 : 0.35
-        });
-      } catch (_) {}
+      if (map.getLayer("lights-glow")) {
+        map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.65 : 0.05);
+      }
+      if (map.getLayer("lights-core")) {
+        map.setPaintProperty("lights-core", "circle-opacity", night ? 1 : 0.25);
+      }
 
       renderLabels(night);
     }
