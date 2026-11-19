@@ -16,12 +16,12 @@
     }
     .panel {
       position: fixed; top: 12px; right: 12px; z-index: 20;
-      background: rgba(10, 15, 28, 0.92); color: #f8fafc;
+      background: rgba(10, 15, 28, 0.94); color: #f8fafc;
       padding: 10px 12px; border-radius: 14px; font-size: 13px;
-      border: 1px solid rgba(251, 191, 36, 0.4);
+      border: 1px solid rgba(251, 191, 36, 0.45);
       backdrop-filter: blur(8px);
       display: flex; flex-direction: column; gap: 8px; max-width: 280px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
     }
     .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
     button {
@@ -31,9 +31,9 @@
     }
     button:active { transform: scale(0.96); }
     button.active { background: #f59e0b; color: #090d16; font-weight: 700; border-color: #f59e0b; }
-    
+
     .ar-label {
-      background: rgba(9, 13, 22, 0.92);
+      background: rgba(9, 13, 22, 0.94);
       color: #fde047;
       border: 1px solid #f59e0b;
       padding: 3px 10px;
@@ -42,7 +42,7 @@
       font-weight: 700;
       white-space: nowrap;
       pointer-events: none;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.55);
     }
     .ar-label.day {
       background: rgba(255, 255, 255, 0.96);
@@ -69,7 +69,6 @@
   <div id="map"></div>
 
   <script>
-    // تفعيل دعم رسم النصوص العربية المتصلة بشكل صحيح في MapLibre
     maplibregl.setRTLTextPlugin(
       'https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js',
       true
@@ -103,60 +102,49 @@
       return h >= 18 || h < 6;
     }
 
-    // استخدام ستايل فيكتور عالي الدقة (OpenFreeMap) بدل الصور الضبابية
     const map = new maplibregl.Map({
       container: "map",
       style: "https://tiles.openfreemap.org/styles/liberty",
       center: [44.3820, 33.2850],
-      zoom: 15.8,
-      pitch: 60,
+      zoom: 16.3,
+      pitch: 62,
       bearing: -15,
-      antialias: true // تنعيم حواف المباني ثلاثية الأبعاد
+      antialias: true
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'bottom-left');
 
     function setupCustomLayers() {
       const layers = map.getStyle().layers;
-      // البحث عن أول طبقة نصوص لوضع المباني أسفلها حتى لا تختفي أسماء الشوارع
       let labelLayerId;
       for (let i = 0; i < layers.length; i++) {
-        if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+        if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
           labelLayerId = layers[i].id;
           break;
         }
       }
 
-      // إخفاء طبقة المباني المسطحة الافتراضية إن وجدت
       if (map.getLayer('building')) map.setLayoutProperty('building', 'visibility', 'none');
       if (map.getLayer('building-3d')) map.removeLayer('building-3d');
 
-      // إضافة طبقة مباني 3D حقيقية لكل العراق من بيانات OpenStreetMap Vector
       map.addLayer({
         'id': 'iraq-3d-buildings',
         'source': 'openmaptiles',
         'source-layer': 'building',
         'type': 'fill-extrusion',
-        'minzoom': 14,
+        'minzoom': 13.5,
         'paint': {
-          'fill-extrusion-color': [
-            'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 12],
-            0, '#cbd5e1',
-            20, '#94a3b8',
-            50, '#64748b'
-          ],
-          // استخدام الارتفاع الحقيقي للمبنى، وإذا لم يكن مسجلاً نعطيه ارتفاعاً افتراضياً منطقياً (10 متر)
+          'fill-extrusion-color': '#f59e0b',
           'fill-extrusion-height': [
             'interpolate', ['linear'], ['zoom'],
-            14, 0,
-            14.5, ['coalesce', ['get', 'render_height'], 10]
+            13.5, 0,
+            14.2, ['*', ['coalesce', ['get', 'render_height'], 12], 1.35]
           ],
           'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-          'fill-extrusion-opacity': 0.92
+          'fill-extrusion-opacity': 0.96
         }
       }, labelLayerId);
 
-      // إضافة مصدر الإضاءات الليلية
       if (!map.getSource('lights')) {
         map.addSource('lights', { type: 'geojson', data: lightsGeoJSON });
         map.addLayer({
@@ -164,10 +152,10 @@
           type: "circle",
           source: "lights",
           paint: {
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 18, 16, 55],
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 14, 16, 42],
             "circle-color": "#fbbf24",
             "circle-blur": 0.9,
-            "circle-opacity": 0.65
+            "circle-opacity": 0.55
           }
         });
       }
@@ -192,41 +180,38 @@
         ? (currentMode === "auto" ? "الوضع الليلي التلقائي مفعّل 🌙" : "الوضع الليلي مفعّل 🌙")
         : (currentMode === "auto" ? "الوضع النهاري التلقائي مفعّل ☀️" : "الوضع النهاري مفعّل ☀️");
 
-      // ضبط إضاءة المشهد ثلاثي الأبعاد لإبراز زوايا المباني والظلال
       map.setLight({
         anchor: 'viewport',
-        color: night ? '#fbbf24' : '#ffffff',
-        intensity: night ? 0.35 : 0.6,
-        position: [1.5, 180, 45]
+        color: night ? '#fde68a' : '#ffffff',
+        intensity: night ? 0.55 : 0.75,
+        position: [1.5, 180, 50]
       });
 
-      // تلوين الخلفية والشوارع حسب الوضع النهاري أو الليلي
       if (map.getLayer('background')) {
-        map.setPaintProperty('background', 'background-color', night ? '#070b14' : '#f1f5f9');
+        map.setPaintProperty('background', 'background-color', night ? '#090f1d' : '#f1f5f9');
       }
 
-      // تلوين المباني بتدرج واقعي حسب الارتفاع
       if (map.getLayer('iraq-3d-buildings')) {
         map.setPaintProperty('iraq-3d-buildings', 'fill-extrusion-color', night
           ? [
-              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 12],
               0, '#1e293b',
-              15, '#334155',
-              35, '#b45309',
-              60, '#f59e0b'
+              14, '#475569',
+              28, '#d97706',
+              50, '#fbbf24'
             ]
           : [
-              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 12],
               0, '#e2e8f0',
-              15, '#cbd5e1',
-              35, '#94a3b8',
-              60, '#64748b'
+              14, '#cbd5e1',
+              28, '#94a3b8',
+              50, '#475569'
             ]
         );
       }
 
       if (map.getLayer("lights-glow")) {
-        map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.65 : 0);
+        map.setPaintProperty("lights-glow", "circle-opacity", night ? 0.55 : 0);
       }
 
       renderLabels(night);
@@ -241,12 +226,12 @@
     }
 
     function focusPlace(lng, lat) {
-      map.flyTo({ center: [lng, lat], zoom: 16, pitch: is3D ? 60 : 0, essential: true });
+      map.flyTo({ center: [lng, lat], zoom: 16.3, pitch: is3D ? 62 : 0, essential: true });
     }
 
     function toggle3D() {
       is3D = !is3D;
-      map.easeTo({ pitch: is3D ? 60 : 0, duration: 800 });
+      map.easeTo({ pitch: is3D ? 62 : 0, duration: 800 });
     }
 
     map.on("load", setupCustomLayers);
