@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>خريطة العراق 3D - الخطوة 2</title>
+  <title>خريطة العراق 3D - الخطوة 3</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700&display=swap" rel="stylesheet" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <style>
-    body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #0b1120; }
+    body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #070b14; font-family: 'Cairo', sans-serif; }
     .panel {
       position: fixed; top: 12px; right: 12px; z-index: 10;
-      background: rgba(15, 23, 42, 0.92); color: #f8fafc;
-      padding: 10px 12px; border-radius: 12px; font-family: sans-serif; font-size: 13px;
-      border: 1px solid rgba(255,255,255,0.15); display: flex; flex-direction: column; gap: 8px;
-      max-width: 260px;
+      background: rgba(15, 23, 42, 0.94); color: #f8fafc;
+      padding: 10px 12px; border-radius: 12px; font-size: 13px;
+      border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: 8px;
+      max-width: 270px;
     }
     .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
     button {
       background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+      border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; font-family: 'Cairo', sans-serif;
     }
     button.active { background: #f59e0b; color: #0f172a; font-weight: bold; }
   </style>
@@ -74,36 +75,55 @@
 
     map.addControl(new maplibregl.NavigationControl());
 
-    function enhanceMapLayers() {
+    function applyThemeToStyle(imageLoaded) {
       const night = isNightMode();
+      const style = map.getStyle();
 
-      // إضافة صورة التبليط كنمط متكرر للشوارع إذا أمكن أو كطبقة إكساء
-      map.loadImage(roadTextureUrl, (err, image) => {
-        if (!err && image && !map.hasImage("asphalt-pattern")) {
-          map.addImage("asphalt-pattern", image, { pixelRatio: 2 });
-        }
+      document.getElementById("modeBadge").innerText = night
+        ? (currentMode === "auto" ? "الوضع الليلي التلقائي مفعّل 🌙" : "الوضع الليلي مفعّل 🌙")
+        : (currentMode === "auto" ? "الوضع النهاري التلقائي مفعّل ☀️" : "الوضع النهاري مفعّل ☀️");
 
-        const style = map.getStyle();
-        if (style && style.layers) {
-          style.layers.forEach((layer) => {
-            // تخصيص لون/خامة الطرق لتظهر بتبليط داكن واضح بدل الرصاصي الباهت
-            if (layer.type === "line" && layer.id && layer.id.includes("road")) {
-              if (map.hasImage("asphalt-pattern")) {
-                map.setPaintProperty(layer.id, "line-pattern", "asphalt-pattern");
-              } else {
-                map.setPaintProperty(layer.id, "line-color", night ? "#1e293b" : "#334155");
-              }
+      if (style && style.layers) {
+        style.layers.forEach((layer) => {
+          if (layer.id === "iraq-3d-buildings") return;
+
+          // إظلام الخلفية والأراضي ليلاً لتباين واضح مع الإنارة والمباني
+          if (layer.type === "background") {
+            map.setPaintProperty(layer.id, "background-color", night ? "#090d16" : "#eef2f6");
+          }
+
+          if (layer.type === "fill") {
+            map.setPaintProperty(layer.id, "fill-color", night ? "#111827" : "#e2e8f0");
+            map.setPaintProperty(layer.id, "fill-opacity", night ? 0.75 : 0.65);
+          }
+
+          // تخصيص الشوارع: تبليط داكن واضح بدل الرصاصي الباهت
+          if (layer.type === "line" && layer.id && (layer.id.includes("road") || layer.id.includes("highway") || layer.id.includes("street") || layer.id.includes("path"))) {
+            if (imageLoaded && map.hasImage("asphalt-pattern")) {
+              map.setPaintProperty(layer.id, "line-pattern", "asphalt-pattern");
+              map.setPaintProperty(layer.id, "line-opacity", night ? 0.95 : 0.9);
+            } else {
+              map.setPaintProperty(layer.id, "line-color", night ? "#1f2937" : "#334155");
             }
-          });
-        }
-      });
+          }
 
-      // إضافة طبقة المباني 3D من بيانات الخريطة الحقيقية
+          // تحسين خط النصوص وتوضيح ألوانها ليلاً ونهاراً
+          if (layer.type === "symbol") {
+            try {
+              map.setLayoutProperty(layer.id, "text-font", ["Cairo Regular", "Noto Sans Arabic Regular", "Open Sans Regular"]);
+              map.setPaintProperty(layer.id, "text-color", night ? "#f8fafc" : "#0f172a");
+              map.setPaintProperty(layer.id, "text-halo-color", night ? "#090d16" : "#ffffff");
+              map.setPaintProperty(layer.id, "text-halo-width", 1.5);
+            } catch (_) {}
+          }
+        });
+      }
+
+      // إضافة/تحديث طبقة المباني 3D
       if (!map.getLayer("iraq-3d-buildings")) {
         const vectorSourceId = Object.keys(map.getStyle().sources).find(
           (k) => map.getStyle().sources[k].type === "vector"
         );
-
         if (vectorSourceId) {
           map.addLayer({
             id: "iraq-3d-buildings",
@@ -112,27 +132,23 @@
             type: "fill-extrusion",
             minzoom: 13.5,
             paint: {
-              "fill-extrusion-color": night ? "#f59e0b" : "#cbd5e1",
+              "fill-extrusion-color": night ? "#f59e0b" : "#94a3b8",
               "fill-extrusion-height": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
+                "interpolate", ["linear"], ["zoom"],
                 13.5, 0,
                 15, ["coalesce", ["get", "render_height"], ["get", "height"], 14]
               ],
-              "fill-extrusion-base": [
-                "coalesce",
-                ["get", "render_min_height"],
-                ["get", "min_height"],
-                0
-              ],
-              "fill-extrusion-opacity": night ? 0.88 : 0.82
+              "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], ["get", "min_height"], 0],
+              "fill-extrusion-opacity": night ? 0.9 : 0.85
             }
           });
         }
+      } else {
+        map.setPaintProperty("iraq-3d-buildings", "fill-extrusion-color", night ? "#f59e0b" : "#94a3b8");
+        map.setPaintProperty("iraq-3d-buildings", "fill-extrusion-opacity", night ? 0.9 : 0.85);
       }
 
-      // إضافة إنارة الشوارع ليلاً
+      // إنارة الشوارع ليلاً
       if (!map.getSource("street-lights")) {
         map.addSource("street-lights", { type: "geojson", data: streetLightsGeoJSON });
       }
@@ -142,32 +158,16 @@
           type: "circle",
           source: "street-lights",
           paint: {
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 12, 16, 40],
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 14, 16, 44],
             "circle-color": "#fbbf24",
             "circle-blur": 0.9,
-            "circle-opacity": night ? 0.55 : 0.05
+            "circle-opacity": night ? 0.6 : 0.05
           }
         });
+      } else {
+        map.setPaintProperty("street-lights-glow", "circle-opacity", night ? 0.6 : 0.05);
       }
 
-      updateLightingOnly();
-    }
-
-    function updateLightingOnly() {
-      const night = isNightMode();
-      document.getElementById("modeBadge").innerText = night
-        ? (currentMode === "auto" ? "الوضع الليلي التلقائي مفعّل 🌙" : "الوضع الليلي مفعّل 🌙")
-        : (currentMode === "auto" ? "الوضع النهاري التلقائي مفعّل ☀️" : "الوضع النهاري مفعّل ☀️");
-
-      if (map.getLayer("iraq-3d-buildings")) {
-        map.setPaintProperty("iraq-3d-buildings", "fill-extrusion-color", night ? "#f59e0b" : "#cbd5e1");
-        map.setPaintProperty("iraq-3d-buildings", "fill-extrusion-opacity", night ? 0.88 : 0.82);
-      }
-      if (map.getLayer("street-lights-glow")) {
-        map.setPaintProperty("street-lights-glow", "circle-opacity", night ? 0.55 : 0.05);
-      }
-
-      // إضاءة محيطية في المشهد 3D
       map.setLight({
         anchor: "viewport",
         color: night ? "#fde68a" : "#ffffff",
@@ -175,12 +175,27 @@
       });
     }
 
+    function enhanceMap() {
+      if (!map.hasImage("asphalt-pattern")) {
+        map.loadImage(roadTextureUrl, (err, image) => {
+          if (!err && image) {
+            map.addImage("asphalt-pattern", image, { pixelRatio: 2 });
+            applyThemeToStyle(true);
+          } else {
+            applyThemeToStyle(false);
+          }
+        });
+      } else {
+        applyThemeToStyle(true);
+      }
+    }
+
     function setMode(mode) {
       currentMode = mode;
       document.getElementById("btnAuto").classList.toggle("active", mode === "auto");
       document.getElementById("btnDay").classList.toggle("active", mode === "day");
       document.getElementById("btnNight").classList.toggle("active", mode === "night");
-      enhanceMapLayers();
+      enhanceMap();
     }
 
     function focusCity(lng, lat) {
@@ -192,7 +207,7 @@
       map.easeTo({ pitch: highPitch ? 62 : 0 });
     }
 
-    map.on("load", enhanceMapLayers);
+    map.on("load", enhanceMap);
   </script>
 </body>
 </html>
