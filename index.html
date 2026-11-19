@@ -21,7 +21,7 @@
       padding: 10px 12px; border-radius: 14px; font-size: 13px;
       border: 1px solid rgba(251, 191, 36, 0.45);
       backdrop-filter: blur(8px);
-      display: flex; flex-direction: column; gap: 8px; max-width: 300px;
+      display: flex; flex-direction: column; gap: 8px; max-width: 330px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.45);
     }
     .panel.day-ui {
@@ -62,19 +62,6 @@
       border-color: rgba(15, 23, 42, 0.2);
     }
     .gov-btn { flex-shrink: 0; }
-
-    .city-label {
-      background: rgba(9, 13, 22, 0.92);
-      color: #fde047;
-      border: 1px solid #f59e0b;
-      padding: 3px 10px; border-radius: 8px;
-      font-size: 12px; font-weight: 800;
-      white-space: nowrap; pointer-events: none;
-    }
-    .city-label.day {
-      background: rgba(255, 255, 255, 0.96);
-      color: #0f172a; border-color: #334155;
-    }
   </style>
 </head>
 <body>
@@ -85,11 +72,13 @@
       <button id="btnAuto" class="active" onclick="setMode('auto')">تلقائي</button>
       <button id="btnDay" onclick="setMode('day')">نهاري ☀️</button>
       <button id="btnNight" onclick="setMode('night')">ليلي 🌙</button>
+      <button id="btnSat" onclick="toggleSatellite()">قمر صناعي 🛰️</button>
     </div>
     <div class="btn-row">
-      <button onclick="focusGov('baghdad')">بغداد</button>
-      <button onclick="focusGov('muthanna')">السماوة</button>
-      <button id="btn3D" class="active" onclick="toggle3D()">زاوية 3D</button>
+      <button id="btn3D" class="active" onclick="toggle3D()">مجسمات 3D</button>
+      <button onclick="map.zoomIn()">تكبير +</button>
+      <button onclick="map.zoomOut()">تصغير −</button>
+      <button onclick="resetNorth()">اتجاه الشمال</button>
     </div>
   </div>
 
@@ -103,32 +92,31 @@
     );
 
     const govs = [
-      { id: "baghdad", name: "بغداد", lng: 44.3820, lat: 33.2850, zoom: 16.2 },
-      { id: "muthanna", name: "السماوة", lng: 45.2944, lat: 31.3320, zoom: 16.2 },
-      { id: "basra", name: "البصرة", lng: 47.7804, lat: 30.5085, zoom: 16.0 },
-      { id: "najaf", name: "النجف", lng: 44.3462, lat: 31.9960, zoom: 16.1 },
-      { id: "karbala", name: "كربلاء", lng: 44.0249, lat: 32.6160, zoom: 16.1 },
-      { id: "erbil", name: "أربيل", lng: 44.0092, lat: 36.1911, zoom: 16.0 },
-      { id: "mosul", name: "الموصل", lng: 43.1189, lat: 36.3400, zoom: 16.0 },
-      { id: "babylon", name: "بابل", lng: 44.4267, lat: 32.4637, zoom: 16.1 },
-      { id: "dhiqar", name: "ذي قار", lng: 46.2573, lat: 31.0437, zoom: 16.1 },
-      { id: "wasit", name: "واسط", lng: 45.8173, lat: 32.5128, zoom: 16.1 },
-      { id: "maysan", name: "ميسان", lng: 47.1450, lat: 31.8356, zoom: 16.1 },
-      { id: "diwaniya", name: "الديوانية", lng: 44.9255, lat: 31.9922, zoom: 16.1 },
-      { id: "anbar", name: "الأنبار", lng: 43.3078, lat: 33.4262, zoom: 16.0 },
-      { id: "diyala", name: "ديالى", lng: 44.6380, lat: 33.7540, zoom: 16.1 },
-      { id: "salahaddin", name: "صلاح الدين", lng: 43.6786, lat: 34.6120, zoom: 16.0 },
-      { id: "kirkuk", name: "كركوك", lng: 44.3666, lat: 35.4681, zoom: 16.0 },
-      { id: "duhok", name: "دهوك", lng: 42.9504, lat: 36.8675, zoom: 16.0 },
-      { id: "sulaymaniyah", name: "السليمانية", lng: 45.4329, lat: 35.5570, zoom: 16.0 }
+      { id: "baghdad", name: "بغداد", lng: 44.3820, lat: 33.2850, zoom: 16.0 },
+      { id: "muthanna", name: "السماوة (المثنى)", lng: 45.2944, lat: 31.3320, zoom: 16.0 },
+      { id: "najaf", name: "النجف", lng: 44.3462, lat: 31.9960, zoom: 16.0 },
+      { id: "basra", name: "البصرة", lng: 47.7804, lat: 30.5085, zoom: 15.8 },
+      { id: "karbala", name: "كربلاء", lng: 44.0249, lat: 32.6160, zoom: 15.9 },
+      { id: "erbil", name: "أربيل", lng: 44.0092, lat: 36.1911, zoom: 15.8 },
+      { id: "mosul", name: "الموصل", lng: 43.1189, lat: 36.3400, zoom: 15.8 },
+      { id: "babylon", name: "بابل", lng: 44.4267, lat: 32.4637, zoom: 15.9 },
+      { id: "dhiqar", name: "ذي قار", lng: 46.2573, lat: 31.0437, zoom: 15.9 },
+      { id: "wasit", name: "واسط", lng: 45.8173, lat: 32.5128, zoom: 15.9 },
+      { id: "maysan", name: "ميسان", lng: 47.1450, lat: 31.8356, zoom: 15.9 },
+      { id: "diwaniya", name: "الديوانية", lng: 44.9255, lat: 31.9922, zoom: 15.9 },
+      { id: "anbar", name: "الأنبار", lng: 43.3078, lat: 33.4262, zoom: 15.8 },
+      { id: "diyala", name: "ديالى", lng: 44.6380, lat: 33.7540, zoom: 15.9 },
+      { id: "salahaddin", name: "صلاح الدين", lng: 43.6786, lat: 34.6120, zoom: 15.8 },
+      { id: "kirkuk", name: "كركوك", lng: 44.3666, lat: 35.4681, zoom: 15.8 },
+      { id: "duhok", name: "دهوك", lng: 42.9504, lat: 36.8675, zoom: 15.8 },
+      { id: "sulaymaniyah", name: "السليمانية", lng: 45.4329, lat: 35.5570, zoom: 15.8 }
     ];
 
     let currentMode = 'auto';
     let is3D = true;
+    let isSatellite = false;
     let currentGov = govs[1];
-    const markers = [];
 
-    // بناء شريط المحافظات
     const govBar = document.getElementById('govBar');
     govs.forEach(g => {
       const btn = document.createElement('button');
@@ -138,72 +126,6 @@
       btn.onclick = () => focusGov(g.id);
       govBar.appendChild(btn);
     });
-
-    // توليد مجسمات بيوت وبنايات لكل محافظة
-    function buildBuildingsGeoJSON() {
-      const features = [];
-      let seed = 4242;
-      const rnd = () => {
-        seed = (seed * 16807) % 2147483647;
-        return (seed - 1) / 2147483646;
-      };
-
-      govs.forEach(g => {
-        const stepLng = 0.00052;
-        const stepLat = 0.00046;
-        for (let r = -11; r <= 11; r++) {
-          for (let c = -11; c <= 11; c++) {
-            if (Math.abs(r) === 0 || Math.abs(c) === 0) continue;
-            if (rnd() < 0.12) continue;
-
-            const cx = g.lng + c * stepLng;
-            const cy = g.lat + r * stepLat;
-            const w = stepLng * (0.58 + rnd() * 0.24);
-            const h = stepLat * (0.58 + rnd() * 0.24);
-            const tall = rnd() > 0.75;
-            const height = tall ? Math.floor(22 + rnd() * 34) : Math.floor(7 + rnd() * 8);
-
-            features.push({
-              type: "Feature",
-              properties: { height, kind: tall ? "tall" : "house" },
-              geometry: {
-                type: "Polygon",
-                coordinates: [[
-                  [cx - w / 2, cy - h / 2],
-                  [cx + w / 2, cy - h / 2],
-                  [cx + w / 2, cy + h / 2],
-                  [cx - w / 2, cy + h / 2],
-                  [cx - w / 2, cy - h / 2]
-                ]]
-              }
-            });
-          }
-        }
-      });
-      return { type: "FeatureCollection", features };
-    }
-
-    // توليد شوارع تبليط لكل محافظة
-    function buildPavingGeoJSON() {
-      const features = [];
-      govs.forEach(g => {
-        features.push({
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: [[g.lng, g.lat - 0.012], [g.lng, g.lat + 0.012]]
-          }
-        });
-        features.push({
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: [[g.lng - 0.014, g.lat], [g.lng + 0.014, g.lat]]
-          }
-        });
-      });
-      return { type: "FeatureCollection", features };
-    }
 
     function isNight() {
       if (currentMode === 'night') return true;
@@ -223,105 +145,64 @@
     });
 
     map.on('load', () => {
+      // مصدر صور الأقمار الصناعية المجاني (Esri World Imagery)
+      if (!map.getSource('esri-satellite')) {
+        map.addSource('esri-satellite', {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          attribution: '© Esri'
+        });
+      }
+
       const layers = map.getStyle().layers;
-      let labelLayerId;
+      let firstSymbolId;
       for (const l of layers) {
         if (l.type === 'symbol' && l.layout && l.layout['text-field']) {
-          labelLayerId = l.id;
+          firstSymbolId = l.id;
           break;
         }
+      }
+
+      // إضافة طبقة القمر الصناعي مخفية افتراضياً لحين الضغط على زر "قمر صناعي"
+      if (!map.getLayer('satellite-layer')) {
+        map.addLayer({
+          id: 'satellite-layer',
+          type: 'raster',
+          source: 'esri-satellite',
+          layout: { visibility: 'none' },
+          paint: {
+            'raster-opacity': 0.95
+          }
+        }, firstSymbolId);
       }
 
       if (map.getLayer('building')) map.setLayoutProperty('building', 'visibility', 'none');
       if (map.getLayer('building-3d')) map.removeLayer('building-3d');
 
-      // تبليط الشوارع
-      map.addSource('paving-src', { type: 'geojson', data: buildPavingGeoJSON() });
-      map.addLayer({
-        id: 'paving-border',
-        type: 'line',
-        source: 'paving-src',
-        paint: {
-          'line-color': '#94a3b8',
-          'line-width': ['interpolate', ['linear'], ['zoom'], 13, 6, 17, 22],
-          'line-opacity': 0.9
-        }
-      }, labelLayerId);
-
-      map.addLayer({
-        id: 'paving-asphalt',
-        type: 'line',
-        source: 'paving-src',
-        paint: {
-          'line-color': '#111827',
-          'line-width': ['interpolate', ['linear'], ['zoom'], 13, 4.5, 17, 18],
-          'line-opacity': 0.98
-        }
-      }, labelLayerId);
-
-      map.addLayer({
-        id: 'paving-dashes',
-        type: 'line',
-        source: 'paving-src',
-        paint: {
-          'line-color': '#fbbf24',
-          'line-width': ['interpolate', ['linear'], ['zoom'], 14, 1, 17, 2.5],
-          'line-dasharray': [3, 3],
-          'line-opacity': 0.85
-        }
-      }, labelLayerId);
-
-      // مجسمات البيوت والبنايات لكل المحافظات
-      map.addSource('iraq-blocks-src', { type: 'geojson', data: buildBuildingsGeoJSON() });
-      map.addLayer({
-        id: 'iraq-blocks-3d',
-        source: 'iraq-blocks-src',
-        type: 'fill-extrusion',
-        minzoom: 13.2,
-        paint: {
-          'fill-extrusion-color': '#475569',
-          'fill-extrusion-height': [
-            'interpolate', ['linear'], ['zoom'],
-            13.2, 0,
-            14.0, ['get', 'height']
-          ],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.95
-        }
-      }, labelLayerId);
-
-      // مباني OSM الإضافية إن وجدت
-      map.addLayer({
-        id: 'iraq-osm-buildings-3d',
-        source: 'openmaptiles',
-        'source-layer': 'building',
-        type: 'fill-extrusion',
-        minzoom: 13.5,
-        paint: {
-          'fill-extrusion-color': '#64748b',
-          'fill-extrusion-height': [
-            'interpolate', ['linear'], ['zoom'],
-            13.5, 0,
-            14.3, ['*', ['coalesce', ['get', 'render_height'], 14], 1.3]
-          ],
-          'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-          'fill-extrusion-opacity': 0.96
-        }
-      }, labelLayerId);
+      // مجسمات المباني الحقيقية من بيانات الخريطة
+      if (!map.getLayer('real-osm-3d')) {
+        map.addLayer({
+          id: 'real-osm-3d',
+          source: 'openmaptiles',
+          'source-layer': 'building',
+          type: 'fill-extrusion',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': '#475569',
+            'fill-extrusion-height': [
+              'interpolate', ['linear'], ['zoom'],
+              14, 0,
+              14.8, ['min', 45, ['*', ['coalesce', ['get', 'render_height'], 10], 1.15]]
+            ],
+            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+            'fill-extrusion-opacity': 0.92
+          }
+        }, firstSymbolId);
+      }
 
       updateTheme();
     });
-
-    function renderLabels(night) {
-      markers.forEach(m => m.remove());
-      markers.length = 0;
-      govs.forEach(g => {
-        const el = document.createElement('div');
-        el.className = 'city-label' + (night ? '' : ' day');
-        el.innerText = g.name;
-        markers.push(new maplibregl.Marker({ element: el }).setLngLat([g.lng, g.lat]).addTo(map));
-      });
-    }
 
     function updateTheme() {
       const night = isNight();
@@ -334,51 +215,49 @@
 
       map.setLight({
         anchor: 'viewport',
-        color: night ? '#fbbf24' : '#ffffff',
-        intensity: night ? 0.5 : 0.8,
+        color: night ? '#e2e8f0' : '#ffffff',
+        intensity: night ? 0.5 : 0.78,
         position: [1.5, 180, 48]
       });
 
+      if (map.getLayer('satellite-layer')) {
+        map.setLayoutProperty('satellite-layer', 'visibility', isSatellite ? 'visible' : 'none');
+        map.setPaintProperty('satellite-layer', 'raster-brightness-max', night ? 0.45 : 1.0);
+        map.setPaintProperty('satellite-layer', 'raster-contrast', night ? 0.25 : 0.05);
+      }
+
       (map.getStyle()?.layers || []).forEach(l => {
+        if (l.id === 'satellite-layer' || l.id === 'real-osm-3d') return;
         if (l.type === 'background') {
-          map.setPaintProperty(l.id, 'background-color', night ? '#080d18' : '#e2e8f0');
+          map.setPaintProperty(l.id, 'background-color', night ? '#0b111e' : '#e5e7eb');
         }
         if (l.type === 'line' && l.id.includes('road')) {
-          map.setPaintProperty(l.id, 'line-color', night ? '#273549' : '#cbd5e1');
+          map.setPaintProperty(l.id, 'line-color', night ? '#1f2937' : '#9ca3af');
         }
       });
 
-      if (map.getLayer('paving-asphalt')) {
-        map.setPaintProperty('paving-asphalt', 'line-color', night ? '#111827' : '#334155');
-      }
-
-      if (map.getLayer('iraq-blocks-3d')) {
-        map.setPaintProperty('iraq-blocks-3d', 'fill-extrusion-color', night
-          ? ['match', ['get', 'kind'], 'tall', '#d97706', '#334155']
-          : ['match', ['get', 'kind'], 'tall', '#64748b', '#cbd5e1']
-        );
-      }
-
-      if (map.getLayer('iraq-osm-buildings-3d')) {
-        map.setPaintProperty('iraq-osm-buildings-3d', 'fill-extrusion-color', night
+      if (map.getLayer('real-osm-3d')) {
+        map.setPaintProperty('real-osm-3d', 'fill-extrusion-color', night
           ? [
-              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 14],
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
               0, '#1e293b',
-              18, '#475569',
-              35, '#d97706',
-              60, '#f59e0b'
+              15, '#334155',
+              30, '#475569'
             ]
           : [
-              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 14],
+              'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 10],
               0, '#e2e8f0',
-              18, '#cbd5e1',
-              35, '#94a3b8',
-              60, '#475569'
+              15, '#cbd5e1',
+              30, '#94a3b8'
             ]
         );
       }
+    }
 
-      renderLabels(night);
+    function toggleSatellite() {
+      isSatellite = !isSatellite;
+      document.getElementById('btnSat').classList.toggle('active', isSatellite);
+      updateTheme();
     }
 
     function setMode(m) {
@@ -394,9 +273,9 @@
       is3D = !is3D;
       document.getElementById('btn3D').classList.toggle('active', is3D);
       map.easeTo({ pitch: is3D ? 58 : 0, duration: 500 });
-      ['iraq-blocks-3d', 'iraq-osm-buildings-3d'].forEach(id => {
-        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', is3D ? 'visible' : 'none');
-      });
+      if (map.getLayer('real-osm-3d')) {
+        map.setLayoutProperty('real-osm-3d', 'visibility', is3D ? 'visible' : 'none');
+      }
     }
 
     function focusGov(id) {
@@ -407,6 +286,10 @@
       const el = document.getElementById('gbtn-' + id);
       if (el) el.classList.add('active');
       map.flyTo({ center: [g.lng, g.lat], zoom: g.zoom, pitch: is3D ? 58 : 0, duration: 800 });
+    }
+
+    function resetNorth() {
+      map.easeTo({ bearing: 0, duration: 500 });
     }
   </script>
 </body>
